@@ -181,3 +181,5 @@ class Test_eval_basis_deriv(unittest.TestCase):
         goldXout = 0.5
         testXout = eval_basis_deriv(xmin=0, xmax=1, N_idx=1, x=1)
         self.assertAlmostEqual(goldXout, testXout)
+
+        
