@@ -15,6 +15,24 @@ def GetElementDomain(ien, elem_idx, nodes):
     domain = np.array((nodes[node0_idx], nodes[node1_idx]))
     return domain
 
+def get_num_elem_from_ien(ien):
+    return ien.shape[1]
+
+
+class Test_get_num_elem_from_ien(unittest.TestCase):
+    def test_single_element(self):
+        IEN = np.array([[0],[1]])
+        goldNum = 1
+        TestNum = get_num_elem_from_ien(ien=IEN)
+        self.assertEqual(goldNum, TestNum)
+    def test_four_element(self):
+        IEN = np.array([[0, 1, 2, 3],
+                            [1, 2, 3, 4]])
+        goldNum = 4
+        TestNum = get_num_elem_from_ien(ien=IEN)
+        self.assertEqual(goldNum, TestNum)
+
+
 class Test_GenerateMesh(unittest.TestCase):
     def test_single_element(self):
         goldIEN = np.array([[0],
