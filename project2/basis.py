@@ -21,17 +21,17 @@ def eval_basis_deriv(xmin, xmax, N_idx, x):
         basis_deriv = 0.5
     return basis_deriv
 
-def map_x_to_xi(x0,x1,x):
-    A = x0
-    B = x1
+def map_x_to_xi(X0,X1,x):
+    A = X0
+    B = X1
     a = -1
     b = 1
     xi = ((x - A) / (B - A)) * (b - a) + a
     return xi
 
-def map_xi_to_x(x0,x1,xi):
-    A = x0
-    B = x1
+def map_xi_to_x(X0,X1,xi):
+    A = X0
+    B = X1
     a = -1
     b = 1
     X = ((xi - a) / (b - a)) * (B - A) + A
@@ -40,65 +40,65 @@ def map_xi_to_x(x0,x1,xi):
 class Test_map_xi_to_x(unittest.TestCase):
     def test_biunit_to_biunit(self):
         goldXout = -1
-        testXout = map_xi_to_x(x0=-1, x1=1, xi=-1)
+        testXout = map_xi_to_x(X0=-1, X1=1, xi=-1)
         self.assertAlmostEqual(goldXout, testXout)
         goldXout = 0
-        testXout = map_xi_to_x(x0=-1, x1=1, xi=0)
+        testXout = map_xi_to_x(X0=-1, X1=1, xi=0)
         self.assertAlmostEqual(goldXout, testXout)
         goldXout = 1
-        testXout = map_xi_to_x(x0=-1, x1=1, xi=1)
+        testXout = map_xi_to_x(X0=-1, X1=1, xi=1)
         self.assertAlmostEqual(goldXout, testXout)
     def test_biunit_to_unit(self):
         goldXout = 0
-        testXout = map_xi_to_x(x0=0, x1=1, xi=-1)
+        testXout = map_xi_to_x(X0=0, X1=1, xi=-1)
         self.assertAlmostEqual(goldXout, testXout)
         goldXout = 0.5
-        testXout = map_xi_to_x(x0=0, x1=1, xi=0)
+        testXout = map_xi_to_x(X0=0, X1=1, xi=0)
         self.assertAlmostEqual(goldXout, testXout)
         goldXout = 1
-        testXout = map_xi_to_x(x0=0, x1=1, xi=1)
+        testXout = map_xi_to_x(X0=0, X1=1, xi=1)
         self.assertAlmostEqual(goldXout, testXout)
     def test_biunit_to_nontrivial(self):
         goldXout = 3
-        testXout = map_xi_to_x(x0=3, x1=7, xi=-1)
+        testXout = map_xi_to_x(X0=3, X1=7, xi=-1)
         self.assertAlmostEqual(goldXout, testXout)
         goldXout = 5
-        testXout = map_xi_to_x(x0=3, x1=7, xi=0)
+        testXout = map_xi_to_x(X0=3, X1=7, xi=0)
         self.assertAlmostEqual(goldXout, testXout)
         goldXout = 7
-        testXout = map_xi_to_x(x0=3, x1=7, xi=1)
+        testXout = map_xi_to_x(X0=3, X1=7, xi=1)
         self.assertAlmostEqual(goldXout, testXout)
 
 class Test_map_x_to_xi(unittest.TestCase):
     def test_biunit_to_biunit(self):
         goldXiout = -1
-        testXiout = map_x_to_xi(x0=-1, x1=1, x=-1)
+        testXiout = map_x_to_xi(X0=-1, X1=1, x=-1)
         self.assertAlmostEqual(goldXiout, testXiout)
         goldXiout = 0
-        testXiout = map_x_to_xi(x0=-1, x1=1, x=0)
+        testXiout = map_x_to_xi(X0=-1, X1=1, x=0)
         self.assertAlmostEqual(goldXiout, testXiout)
         goldXiout = 1
-        testXiout = map_x_to_xi(x0=-1, x1=1, x=1)
+        testXiout = map_x_to_xi(X0=-1, X1=1, x=1)
         self.assertAlmostEqual(goldXiout, testXiout)
     def test_unit_to_biunit(self):
         goldXiout = -1
-        testXiout = map_x_to_xi(x0=0, x1=1, x=0)
+        testXiout = map_x_to_xi(X0=0, X1=1, x=0)
         self.assertAlmostEqual(goldXiout, testXiout)
         goldXiout = 0
-        testXiout = map_x_to_xi(x0=0, x1=1, x=0.5)
+        testXiout = map_x_to_xi(X0=0, X1=1, x=0.5)
         self.assertAlmostEqual(goldXiout, testXiout)
         goldXiout = 1
-        testXiout = map_x_to_xi(x0=0, x1=1, x=1)
+        testXiout = map_x_to_xi(X0=0, X1=1, x=1)
         self.assertAlmostEqual(goldXiout, testXiout)
     def test_biunit_to_nontrivial(self):
         goldXiout = -1
-        testXiout = map_x_to_xi(x0=3, x1=7, x=3)
+        testXiout = map_x_to_xi(X0=3, X1=7, x=3)
         self.assertAlmostEqual(goldXiout, testXiout)
         goldXiout = 0
-        testXiout = map_x_to_xi(x0=3, x1=7, x=5)
+        testXiout = map_x_to_xi(X0=3, X1=7, x=5)
         self.assertAlmostEqual(goldXiout, testXiout)
         goldXiout = 1
-        testXiout = map_x_to_xi(x0=3, x1=7, x=7)
+        testXiout = map_x_to_xi(X0=3, X1=7, x=7)
         self.assertAlmostEqual(goldXiout, testXiout)
 
 class Test_eval_basis(unittest.TestCase):
@@ -182,4 +182,3 @@ class Test_eval_basis_deriv(unittest.TestCase):
         testXout = eval_basis_deriv(xmin=0, xmax=1, N_idx=1, x=1)
         self.assertAlmostEqual(goldXout, testXout)
 
-        
