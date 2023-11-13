@@ -51,6 +51,11 @@ class Test_get_gauss_quadrature(unittest.TestCase):
 
 
 class Test_integrate_by_quadrature(unittest.TestCase):
+    def test_constant_polynomial(self):
+        function = lambda x: 1
+        goldInt = 2
+        TestInt = integrate_by_quadrature(function=function, x_lower=-1, x_upper=1, n_quad=1)
+        self.assertAlmostEqual(goldInt, TestInt)
     def test_linear_polynomial(self):
         function = lambda x: x + 1
         goldInt = 2
