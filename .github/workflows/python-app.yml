@@ -37,6 +37,7 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with unittest
       run: |
-        python -m unittest project2/mesh.py
-        python -m unittest project2/basis.py
-        python -m unittest project2/integrate.py
+        cd project2
+        python -m unittest mesh.py
+        python -m unittest basis.py
+        python -m unittest integrate.py
