@@ -134,7 +134,7 @@ class Test_C(unittest.TestCase):
 
 
 def eval_B(xmin, xmax, deg, B_idx, x):
-    xi = map_x_to_xi(xmin, xmax, x, basis_lower=0, basis_upper=1)
+    # xi = map_x_to_xi(xmin, xmax, x, basis_lower=0, basis_upper=1)
     i = B_idx
     n = deg
     c_term = C(n,i)
@@ -202,6 +202,7 @@ def C_prime(p, A):
 # class Test_C_prime(unittest.TestCase):
 #     def test_unit_lmr_deg0_bf1(self):
 #         ...
+
 
 def B_eqn_nix(t,n,i):
     num = (1 - t)

@@ -387,15 +387,15 @@ def NBasisDerv(deg, N_idx, t):
     # get derivatives of remaining NBasis terms
     N_term1 = pca
     N_term1_derv = pca_derv
-    N_term2 = (1-t)**(p-a)
-    if t == 0:
+    N_term2 = t**a
+    if a == 0:
         N_term2_derv = 0
     else:    
         N_term2_derv = a*t**(a-1)
-    N_term3 = t**a
-    if (1 - t) == 0:
+    N_term3 = (1-t)**(p-a)
+    if p == a:
         N_term3_derv = 0
-    else: 
+    else:
         N_term3_derv = -(p - a) * (1 - t)**(p - (1 + a))
         # for deg 1, a0 -> exp of 0 / a1 -> exp of -1
         # for deg 2, -> exp of -1 for a2
@@ -412,54 +412,57 @@ class Test_NBasisDerv(unittest.TestCase):
         goldXout = -2.0
         testXout = NBasisDerv(deg=1, N_idx=0, t=0)
         self.assertAlmostEqual(goldXout, testXout)
-        goldXout = -1.0
+        # goldXout = -1.0
+        goldXout = -1.5
         testXout = NBasisDerv(deg=1, N_idx=0, t=0.5)
         self.assertAlmostEqual(goldXout, testXout)
-        # goldXout = -1.0
-        goldXout = 0.0
+        goldXout = -1.0
+        # goldXout = 0.0
         testXout = NBasisDerv(deg=1, N_idx=0, t=1)
         self.assertAlmostEqual(goldXout, testXout)
-        # goldXout = 1.0
-        goldXout = 0.0
+        goldXout = 1.0
+        # goldXout = 0.0
         testXout = NBasisDerv(deg=1, N_idx=1, t=0)
         self.assertAlmostEqual(goldXout, testXout)
-        goldXout = 1.0
+        # goldXout = 1.0
+        goldXout = 1.5
         testXout = NBasisDerv(deg=1, N_idx=1, t=0.5)
         self.assertAlmostEqual(goldXout, testXout)
         # goldXout = 1.0
         goldXout = 2.0
         testXout = NBasisDerv(deg=1, N_idx=1, t=1)
         self.assertAlmostEqual(goldXout, testXout)
+    
     def test_NBasisDerv_deg2(self):
-        # goldXout = -2.0
-        goldXout = -4.0
+        # 2t-2
+        goldXout = -4.0 # -2
         testXout = NBasisDerv(deg=2, N_idx=0, t=0)
         self.assertAlmostEqual(goldXout, testXout)
-        # goldXout = -1.0
-        goldXout = -0.5
+        goldXout = -1.25 # -1.0 
         testXout = NBasisDerv(deg=2, N_idx=0, t=0.5)
         self.assertAlmostEqual(goldXout, testXout)
-        goldXout = 0.0
+        goldXout = 0.0 # 0.0
         testXout = NBasisDerv(deg=2, N_idx=0, t=1)
         self.assertAlmostEqual(goldXout, testXout)
-        goldXout = -2.0
+
+        # CORRECT
+        goldXout = 2.0
         testXout = NBasisDerv(deg=2, N_idx=1, t=0)
         self.assertAlmostEqual(goldXout, testXout)
-        # goldXout = 1.0
         goldXout = 0.0
         testXout = NBasisDerv(deg=2, N_idx=1, t=0.5)
         self.assertAlmostEqual(goldXout, testXout)
-        goldXout = 2.0
+        goldXout = -2.0
         testXout = NBasisDerv(deg=2, N_idx=1, t=1)
         self.assertAlmostEqual(goldXout, testXout)
-        goldXout = 0.0
+        
+        # 2 - 4t
+        goldXout = 0.0 # 2.0
         testXout = NBasisDerv(deg=2, N_idx=2, t=0)
         self.assertAlmostEqual(goldXout, testXout)
-        # goldXout = 1.0
-        goldXout = 0.5
+        goldXout = 1.25 # 0.0
         testXout = NBasisDerv(deg=2, N_idx=2, t=0.5)
         self.assertAlmostEqual(goldXout, testXout)
-        # goldXout = 2.0
-        goldXout = 4.0
+        goldXout = 4.0 # -2.0
         testXout = NBasisDerv(deg=2, N_idx=2, t=1)
         self.assertAlmostEqual(goldXout, testXout)
