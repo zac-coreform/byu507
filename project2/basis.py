@@ -140,6 +140,7 @@ class Test_eval_basis(unittest.TestCase):
         goldXout = 1
         testXout = eval_basis(xmin=0, xmax=1, N_idx=1, x=1)
         self.assertAlmostEqual(goldXout, testXout)
+    # ADD THIS:
     # def test_eval_basis_arbitrary(self):
 
 class Test_eval_basis_deriv(unittest.TestCase):
