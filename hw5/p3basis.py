@@ -190,7 +190,7 @@ class Test_eval_B(unittest.TestCase):
 
 #####################################################
 #####################################################
-t,n,i = sym.symbols('t,n i')
+# t,n,i = sym.symbols('t,n i')
 
 # per the simple formula, not class formula
 def C_prime(p, A):
@@ -204,15 +204,27 @@ def C_prime(p, A):
 #         ...
 
 def B_eqn_nix(t,n,i):
-    return (1 - t)**(n - i)
+    num = (1 - t)
+    if num == 0:
+        return 0
+    else:
+        return num**(n - i)
 def B_eqn_x(t,n,i):
-    return t**i
-def B_eqn_nix_prime(t,n,i):
-    return sym.diff(B_eqn_nix(t,n,i),t)
-def B_eqn_x_prime(t,n,i):
-    return sym.diff(B_eqn_x(t,n,i),t)
-B_nix_prime = sym.lambdify((t,n,i),B_eqn_nix_prime(t,n,i),"numpy")
-B_x_prime = sym.lambdify((t,n,i),B_eqn_x_prime(t,n,i),"numpy")
+    if t == 0:
+        return 0
+    else:
+        return t**i
+def B_nix_prime(t,n,i):
+    num = (1 - t)
+    if num == 0:
+        return 0
+    else: 
+        return -(n - i) * (1 - t)**(n - (1 + i))
+def B_x_prime(t,n,i):
+    if t == 0:
+        return 0
+    else:
+        return i*t**(i-1)
 
 # class Test_B_nix_prime(unittest.TestCase):
 #     def test_unit_lmr_deg0_bf1(self):
@@ -271,14 +283,21 @@ def B33dx(t):
 class Test_eval_B_deriv(unittest.TestCase):
     def test_unit_lmr_deg1_bf0(self):
         goldBderiv = -1
-        for j in np.random.random((5, 1)):
+        for j in np.random.random((5, 1)[0]):
+            # print("random x=", j)
+            # testBeval = eval_B(xmin=0, xmax=1, deg=1, B_idx=0, x=j)
             testBderiv = eval_B_deriv(xmin=0, xmax=1, deg=1, B_idx=0, x=j)
+            # print("testBderiv", testBderiv)
             self.assertAlmostEqual(goldBderiv, testBderiv)
     def test_unit_lmr_deg1_bf1(self):
-        goldBderiv = 1
-        for j in np.random.random((5, 1)):
+        goldBderiv = 1.0
+        for j in np.random.random((5, 1)[0]):
+            print("random x=", j)
+            testBeval = eval_B(xmin=0, xmax=1, deg=1, B_idx=0, x=j)
+            print("testBeval", testBeval)
             testBderiv = eval_B_deriv(xmin=0, xmax=1, deg=1, B_idx=1, x=j)
-            self.assertAlmostEqual(goldBderiv, testBderiv)
+            print("testBderiv2", testBderiv)
+            self.assertEqual(goldBderiv, testBderiv)
     # def test_unit_lmr_deg2_bf0(self):
     #     goldBderiv = 
     # def test_unit_lmr_deg2_bf1(self):
