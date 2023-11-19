@@ -7,10 +7,11 @@ from matplotlib import pyplot as plt
 
 # Plot your results for each of the four basis functions (as given in the python functionality) to visualize the basis functions. 
 
-# Also complete code that will take a list of 4 numpy arrays (representing x and y coordinates of corners of a quadrilateral) and evaluate the mapping from parametric domain into this quadrilateral. 
+# Also complete code that will 
+#   take a list of 4 numpy arrays (representing x and y coordinates of corners of a quadrilateral) and 
+#   evaluate the mapping from parametric domain into this quadrilateral. 
 
 # Again, plot your results to validate that it works. Submit your completed code.
-
 
 
 def NBasis(a,xi,eta):
@@ -19,18 +20,42 @@ def NBasis(a,xi,eta):
     return (0.5 * (1 + xi_vals[a] * xi)) * (0.5 * (1 + eta_vals[a] * eta))
 
 
-# N = np.zeros((3,n_x,n_y))
-    # 3 arrays of 100x101 between -1 and 1
-# for i in range(0,len(xvals)):
-#     for j in range(0,len(yvals)):
-        # temp = XMap(x_pts_arrays,xvals[i],yvals[j])
-                                    #. ^100     ^101
+
 
 # N[0,i,j] = temp[0]       #in xi direction
 # N[1,i,j] = temp[1]       #in eta direction
 # N[2,i,j] = temp[2] if XMap is outputting len 3, otherwise, zeros
 
-# def XMap(x_pts,xi,eta):  #evaluate the transformation mapping
+# before: for xi in, return x
+def XMap(x_pts,xi,eta):
+    Xs = Ys = []
+    for i in len(x_pts):
+      Xs.append(x_pts[i][0])
+    for j in len(x_pts):
+      Ys.append(x_pts[j][1])
+    Ax = min(Xs)
+    Bx = max(Xs)
+    Ay = min(Ys)
+    By = max(Ys)
+    axy = -1
+    bxy = 1
+    xylist = []
+    def map_XY_to_xy(xymin, xymax, XY):
+        xy = ((xymax - xymin) * (bxy - axy)) + axy
+        return xy
+    for i in range(0,len(x_pts)):
+        temp = np.zeros((2,1))
+        X = x_pts[i][0]
+        Y = x_pts[i][1]
+        x = map_XY_to_xy(Ax, Bx, X)
+        y = map_XY_to_xy(Ay, By, Y)
+        temp[0] = X
+        temp[1] = Y
+        xylist.append(np.ravel(temp))
+    return xylist
+
+
+   #evaluate the transformation mapping
 #     # input:
 #         # x_pts = [array([2, 1]), array([ 5, -1]), array([8, 0]), array([4, 4])]
 #         # xi = one of 100 points between -1 and 1
@@ -70,7 +95,7 @@ def PlotTransformationMap(x_pts):
     xvals = np.linspace(-1,1,n_x) 
     yvals = np.linspace(-1,1,n_y)
     
-    X, Y = np.meshgrid(xvals, yvals)   
+    X, Y = np.meshgrid(xvals, yvals)
     
     N = np.zeros((3,n_x,n_y))
     # 3 arrays of 100x101
