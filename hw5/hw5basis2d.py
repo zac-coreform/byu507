@@ -20,68 +20,23 @@ def NBasis(a,xi,eta):
     return (0.5 * (1 + xi_vals[a] * xi)) * (0.5 * (1 + eta_vals[a] * eta))
 
 
-
-
-# N[0,i,j] = temp[0]       #in xi direction
-# N[1,i,j] = temp[1]       #in eta direction
-# N[2,i,j] = temp[2] if XMap is outputting len 3, otherwise, zeros
-
 # before: for xi in, return x
 def XMap(x_pts,xi,eta):
-    Xs = Ys = []
-    for i in len(x_pts):
-      Xs.append(x_pts[i][0])
-    for j in len(x_pts):
-      Ys.append(x_pts[j][1])
-    Ax = min(Xs)
-    Bx = max(Xs)
-    Ay = min(Ys)
-    By = max(Ys)
-    axy = -1
-    bxy = 1
-    xylist = []
-    def map_XY_to_xy(xymin, xymax, XY):
-        xy = ((xymax - xymin) * (bxy - axy)) + axy
-        return xy
-    for i in range(0,len(x_pts)):
-        temp = np.zeros((2,1))
-        X = x_pts[i][0]
-        Y = x_pts[i][1]
-        x = map_XY_to_xy(Ax, Bx, X)
-        y = map_XY_to_xy(Ay, By, Y)
-        temp[0] = X
-        temp[1] = Y
-        xylist.append(np.ravel(temp))
-    return xylist
+    pts_arrays = []
+    for pt in x_pts:
+        pts_arrays.append(np.array(pt))
+    xy_out = np.zeros((2,1))
+    for i in range(0, 4):
+        nbi = NBasis(i, xi, eta)
+        # print("nbi =", nbi)
+        pti = pts_arrays[i]
+        # print("pti =", pti)
+        prod = nbi * pti
+        # print("prod =", prod)
+        xy_out[0] += prod[0]
+        xy_out[1] += prod[1]
+    return xy_out
 
-
-   #evaluate the transformation mapping
-#     # input:
-#         # x_pts = [array([2, 1]), array([ 5, -1]), array([8, 0]), array([4, 4])]
-#         # xi = one of 100 points between -1 and 1
-#         # eta = one of 101 points between -1 and 1
-#         xy = [0,0]
-#         for i in range(0,2):
-#             for j in range(0,2):
-
-#             NBasis(a,xi,eta) * xvals[j]
-
-#     # output is vector [x(xi), y(eta)]
-#     xvals = [x0,x1]
-#     for a in range(0,2):
-#         x += NBasis(a,xi,eta) * xvals[a]
-#     return x
-    
-    # xvals = np.linspace(x0,x1,p+1)
-    # for j in range(0,len(xvals)):
-    #     x += NBasis(deg=p, N_idx=j, t=xi) * xvals[j]
-    # return x
-
-
-
-
-# input four points as a list of lists
-# e.g. xpts = [[2,1],[5,-1],([8,0]),([4,4])]  
 
 def PlotTransformationMap(x_pts):
     n_x = 100
