@@ -60,7 +60,6 @@ class Test_gen_elem_node_coord_indices(unittest.TestCase):
         self.assertTrue(np.allclose(Gold_elem_node_coord_indices, Test_elem_node_coord_indices)) 
 
 
-
 class generate_elements():
     def __init__(self, mesh):
         # self.e = e
@@ -75,24 +74,38 @@ class generate_elements():
         n1_idx = int(self.enci[1,e])
         self.element_domain = np.array((self.all_nodes[n0_idx], self.all_nodes[n1_idx]))
         return self.element_domain
-    # ke for a single element e given the mesh info above    
-    def gen_ke(self, e):        
-        mx = bs.stock_mx()
+    # ke for a single element e given the mesh info passed to generate_elements above    
+    def gen_ke(self, e):
+        # mx = bs.stock_mx()
         mx_ = np.zeros((2,2))
         e_dom = self.get_element_domain(e)
         e_x0 = e_dom[0]
         e_x1 = e_dom[1]
-        mx_mult = bs.mxm(e_x0, e_x1)
+        # mx_mult = bs.mxm(e_x0, e_x1)
         inv_term = bs.x_xi_deriv_inv(e_x0, e_x1)
+        jac = ig.get_jacobian(e_x0, e_x1)
+        print(f"jac is {jac} and inv term is {inv_term}")  
+        theory = bool(inv_term == 1 / jac)
+        print(theory) 
         for a in range(0,2):
-            N_a_xi_term = bs.N_a_xi(a)
+            N_a_xi_term = bs.eval_basis_deriv(xmin=e_x0, xmax=e_x1, bf_idx=a, x_in=0) # x_in does not matter
+            print(f"bf a term = {N_a_xi_term}")
             for b in range(0,2):
-                N_b_xi_term = bs.N_a_xi(b)
-                ke_entry_incr = N_a_xi_term * N_b_xi_term * inv_term
+                # N_b_xi_term = bs.N_a_xi(b)
+                N_b_xi_term = bs.eval_basis_deriv(xmin=e_x0, xmax=e_x1, bf_idx=b, x_in=0) # x_in does not matter
+                print(f"bf b term = {N_b_xi_term}")
+                # def prodfn(aa, bb):
+                #     return jac * N_a_xi_term * N_b_xi_term
+                # def quad_fn(aa,bb):
+                #     return lambda xi: prodfn(a,b)
+                def quad_fn(xi=0, a=0, b=0):
+                    return lambda xi: N_a_xi_term * N_b_xi_term * inv_term
+                ke_entry_incr = ig.integrate_by_quadrature(function=quad_fn, x_lower=e_x0, x_upper=e_x1, n_quad=1, a_in=a, b_in=b)
+                print(f"entry incr is {ke_entry_incr}")
                 mx_[a, b] += ke_entry_incr
         ke = mx_
         return ke
-            
+
 
 class Test_get_element_domain(unittest.TestCase):
     def test_get_element_domain_1_elem(self):
@@ -148,35 +161,59 @@ def get_element_ke(e, ien, nodes, constit_coeff):
     print("resulting ke\n", ke)
     return ke
 
-# class Test_get_element_ke(unittest.TestCase):
-#     def test_single_element(self):
-#         ien_, nodes_ = generate_mesh(x0=0, x1=1, n_elem=2)
-#         # print(f"ien:\n {ien_} \nnodes\n{nodes_}")
-#         n_elem_ = get_num_elem_from_ien(ien_)
-#         # print("n_elem\n", n_elem_)
-#         elem_index_iterable = range(0, n_elem_)
-#         constit_coeff = 1
-#         ke_list = []
-#         for e in elem_index_iterable:
-#             ke = get_element_ke(e, ien_, nodes_, constit_coeff)
-#             ke_list.append(ke)
-#         # print("ke_list", ke_list)
-#         return ke_list
-#         # goldke = 
-#         # Testke = 
-#     def test_two_elements(self):
-#         ien_, nodes_ = generate_mesh(x0=0, x1=0.5, n_elem=1)
-#         print(f"ien:\n {ien_} \nnodes\n{nodes_}")
-#         n_elem_ = get_num_elem_from_ien(ien_)
-#         print("n_elem\n", n_elem_)
-#         elem_index_iterable = range(0, n_elem_)
-#         constit_coeff = 1
-#         ke_list = []
-#         for e in elem_index_iterable:
-#             ke = get_element_ke(e, ien_, nodes_, constit_coeff)
-#             ke_list.append(ke)
-#         # print("ke_list", ke_list)
-#         return ke_list
+class Test_get_element_ke(unittest.TestCase):
+    def test_m1_element_ke(self):
+        m1 = generate_mesh(phys_xmin=0, phys_xmax=1, n_elem=1)
+        m1_elems = generate_elements(m1)  
+        Gold_ke = np.array(([1., -1.], [-1., 1.]))
+        print(f"Gold ke is\n {Gold_ke}")
+        Test_ke = m1_elems.gen_ke(0)
+        print(f"test ke is\n {Test_ke}")
+        self.assertTrue(np.allclose(Gold_ke, Test_ke))
+    def test_m2_element_ke(self):
+        m1 = generate_mesh(phys_xmin=0, phys_xmax=1, n_elem=2)
+        m1_elems = generate_elements(m1)  
+        Gold_ke = np.array(([2., -2.], [-2., 2.]))
+        print(f"Gold ke is\n {Gold_ke}")
+        Test_ke = m1_elems.gen_ke(0)
+        print(f"test ke is\n {Test_ke}")
+        self.assertTrue(np.allclose(Gold_ke, Test_ke))
+    def test_m2_element_ke(self):
+        m1 = generate_mesh(phys_xmin=0, phys_xmax=1, n_elem=3)
+        m1_elems = generate_elements(m1)  
+        Gold_ke = np.array(([3., -3.], [-3., 3.]))
+        print(f"Gold ke is\n {Gold_ke}")
+        Test_ke = m1_elems.gen_ke(0)
+        print(f"test ke is\n {Test_ke}")
+        self.assertTrue(np.allclose(Gold_ke, Test_ke))
+    # def test_single_element(self):
+    #     ien_, nodes_ = generate_mesh(x0=0, x1=1, n_elem=2)
+    #     # print(f"ien:\n {ien_} \nnodes\n{nodes_}")
+    #     n_elem_ = get_num_elem_from_ien(ien_)
+    #     # print("n_elem\n", n_elem_)
+    #     elem_index_iterable = range(0, n_elem_)
+    #     constit_coeff = 1
+    #     ke_list = []
+    #     for e in elem_index_iterable:
+    #         ke = get_element_ke(e, ien_, nodes_, constit_coeff)
+    #         ke_list.append(ke)
+    #     # print("ke_list", ke_list)
+    #     return ke_list
+    #     # goldke = 
+    #     # Testke = 
+    # def test_two_elements(self):
+    #     ien_, nodes_ = generate_mesh(x0=0, x1=0.5, n_elem=1)
+    #     print(f"ien:\n {ien_} \nnodes\n{nodes_}")
+    #     n_elem_ = get_num_elem_from_ien(ien_)
+    #     print("n_elem\n", n_elem_)
+    #     elem_index_iterable = range(0, n_elem_)
+    #     constit_coeff = 1
+    #     ke_list = []
+    #     for e in elem_index_iterable:
+    #         ke = get_element_ke(e, ien_, nodes_, constit_coeff)
+    #         ke_list.append(ke)
+    #     # print("ke_list", ke_list)
+    #     return ke_list
 
 
 
