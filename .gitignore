@@ -3,3 +3,4 @@ hw5/zarch/
 .vscode/
 .DS_Store
 */.ipynb_checkpoints/
+*/zarch/
