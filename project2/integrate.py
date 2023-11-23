@@ -16,18 +16,52 @@ def get_jacobian(X0, X1):
     return jacobian
 
 
-def integrate_by_quadrature(function, x_lower, x_upper, n_quad):
+# def integrate_by_quadrature(function, x_lower, x_upper, n_quad, a_in, b_in):
+#     print(f"\nrunning quadrature for a={a_in}, b={b_in} ")
+#     quad = get_gauss_quadrature(n_quad)
+#     gauss_points = quad[0]
+#     print(f"pts={gauss_points}")
+#     gauss_weights = quad[1]
+#     print(f"wts={gauss_weights}")
+#     jacobian = get_jacobian(x_lower, x_upper)
+#     print(f"J={jacobian}")
+#     integral = 0
+#     for p in range(0, len(gauss_points)): 
+#         # x = basis.map_xi_to_x(X0=x_lower, X1=x_upper, xi=gauss_points[p])
+#         xi = gauss_points[p]
+#         print(f'at {p}th point = {xi} with wt={gauss_weights[p]}')
+#         function_val = function(xi)
+#         print(f"...fn val currently = {function_val}")
+#         incr = function_val * gauss_weights[p] * jacobian
+#         integral += incr
+#         print(f"added increment={incr} for curr val of {integral}")
+#     return integral
+
+def integrate_by_quadrature(function, x_lower, x_upper, n_quad, a_in, b_in):
     quad = get_gauss_quadrature(n_quad)
     gauss_points = quad[0]
     gauss_weights = quad[1]
     jacobian = get_jacobian(x_lower, x_upper)
     integral = 0
+    fn = function(a=a_in, b=b_in)
     for p in range(0, len(gauss_points)): 
-        x = basis.map_xi_to_x(X0=x_lower, X1=x_upper, xi=gauss_points[p])
-        function_val = function(x)
-        partial_integral = function_val * gauss_weights[p] * jacobian
-        integral += partial_integral
+        pt = gauss_points[p]
+        function_val = fn(xi=pt)
+        incr = function_val * gauss_weights[p]
+        integral += incr
     return integral
+# AS WRITTEN IMMED ABOVE, THIS TAKES IN A FUNCTION WRITTEN AS BELOW:
+# def fnn(xi=0,a=0,b=0):
+#     return lambda xi: prodfn(a,b)
+# WHERE PRODFN IS:
+# def prodfn(a,b):
+#     return x_xi_deriv_inv(0,1) * Nab(a,b)
+# RESULT:
+# fnn(a=1)(0) # --> returns 0.5 for all xi, but pos/neg dep on whether a=b
+# USAGE:
+# integrate_by_quadrature2(function=fnn, x_lower=0, x_upper=1, n_quad=1, a_in=0, b_in=1)
+
+# NOTE: JACOBIAN ELIMINATED ON THE THEORY THAT IT'S JUST THE INVERSE MAP DERIVATIVE TERM. PRETTY SURE THAT'S CORRECT. 
 
 class Test_get_gauss_quadrature(unittest.TestCase):
     def test_1quad(self):
@@ -48,7 +82,6 @@ class Test_get_gauss_quadrature(unittest.TestCase):
         TestPoints, TestWeights = get_gauss_quadrature(3)
         self.assertTrue(np.allclose(goldPoints, TestPoints))
         self.assertTrue(np.allclose(goldWeights, TestWeights))
-
 
 class Test_integrate_by_quadrature(unittest.TestCase):
     def test_constant_polynomial(self):

@@ -1,39 +1,62 @@
 import unittest
 import numpy as np
+import sys
 
 # def affine_map(from_domain, to_domain, from_variate) # return to_variate
 # def param_to_spatial(param_domain, spatial_domain, param_value)
 # def spatial_to_param(spatial_domain, param_domain, spatial_value)
 
-def eval_basis(xmin, xmax, N_idx, x):
-    xi = map_x_to_xi(xmin, xmax, x)
+# evaluate basis N_idx in param at equiv xi of x given
+def eval_basis(xmin, xmax, N_idx, x_in):
+    xi = map_x_to_xi(xmin, xmax, x_in)
     if N_idx == 0:
         basis_val = (1 - xi) / 2
     elif N_idx == 1:
         basis_val = (xi + 1) / 2
     return basis_val
 
-def eval_basis_deriv(xmin, xmax, N_idx, x):
-    xi = map_x_to_xi(xmin, xmax, x)
+def eval_basis_deriv(Xmin, Xmax, N_idx, x_in):
+    X_dom = [Xmin, Xmax]
+    xi0 = -1
+    xi1 = 1
+    print(f"evaling basis deriv no.{N_idx} at X={x_in} from {X_dom} ")
+    xi = map_x_to_xi(Xmin, Xmax, x_in)
+    print(f"mapping x_in={x_in} to xi={xi} in paramdom")
     if N_idx == 0:
-        basis_deriv = -0.5
+        basis_deriv = -1 / xi1 - xi0
     elif N_idx == 1:
-        basis_deriv = 0.5
+        basis_deriv = 1 / xi1 - xi0
     return basis_deriv
 
 def map_x_to_xi(X0,X1,x):
-    A = X0
-    B = X1
-    a = -1
-    b = 1
-    xi = ((x - A) / (B - A)) * (b - a) + a
+    dom_test = X0 <= x <= X1
+    if not dom_test:
+        sys.exit(f"x must be between {X0} and {X1}")
+    X0 = X0
+    X1 = X1
+    xi0 = -1
+    xi1 = 1
+    xi = ( (x - X0) * (xi1 - xi0) / (X1 - X0) ) + xi0
+
     return xi
+# with D = b and E = a, this is: 
+# (((x - A) / (B - A)) * (D - E) + E)
+# and the derivative is:
+# (E-D)/(A-B)
+# translated back, that's 
+# ((a - b) / (A - B))
+
+def map_x_to_xi_deriv(X0,X1,X_in):
+    xi0 = -1
+    xi1 = 1
+    deriv = ((xi1 - xi0) / (X0 - X1))
+    return deriv
 
 def map_xi_to_x(X0,X1,xi):
     A = X0
     B = X1
-    a = -1
-    b = 1
+    xi0 = -1
+    xi1 = 1
     X = ((xi - a) / (b - a)) * (B - A) + A
     return X
 
@@ -164,22 +187,52 @@ class Test_eval_basis_deriv(unittest.TestCase):
         testXout = eval_basis_deriv(xmin=-1, xmax=1, N_idx=1, x=1)
         self.assertAlmostEqual(goldXout, testXout)
     def test_eval_basis_deriv_unit(self):
-        goldXout = -0.5
+        goldXout = -1.0
         testXout = eval_basis_deriv(xmin=0, xmax=1, N_idx=0, x=0)
         self.assertAlmostEqual(goldXout, testXout)
-        goldXout = -0.5
+        goldXout = -1.0
         testXout = eval_basis_deriv(xmin=0, xmax=1, N_idx=0, x=0.5)
         self.assertAlmostEqual(goldXout, testXout)
-        goldXout = -0.5
+        goldXout = -1.0
         testXout = eval_basis_deriv(xmin=0, xmax=1, N_idx=0, x=1)
         self.assertAlmostEqual(goldXout, testXout)
-        goldXout = 0.5
+        goldXout = 1.0
         testXout = eval_basis_deriv(xmin=0, xmax=1, N_idx=1, x=0)
         self.assertAlmostEqual(goldXout, testXout)
-        goldXout = 0.5
+        goldXout = 1.0
         testXout = eval_basis_deriv(xmin=0, xmax=1, N_idx=1, x=0.5)
         self.assertAlmostEqual(goldXout, testXout)
-        goldXout = 0.5
+        goldXout = 1.0
         testXout = eval_basis_deriv(xmin=0, xmax=1, N_idx=1, x=1)
         self.assertAlmostEqual(goldXout, testXout)
 
+# hughes eqns version
+
+def x_xi_deriv(e_x0, e_x1):
+    h_e = e_x1 - e_x0
+    return  h_e / 2
+
+def x_xi_deriv_inv(e_x0, e_x1): 
+    h_e = e_x1 - e_x0
+    return 2 / h_e
+
+def N_a_xi(idx):
+    neg = (-1)**idx
+    return neg / 2
+
+# SO FOR AN ELEMENT NOW WE SHOULD GET THAT THE KE IS JUST 1 / H_E * STOCK MATRIX OF 1, -1
+
+def mxm(e_x0, e_x1):
+    h_e = e_x1 - e_x0
+    sol = 1 / h_e
+    return sol
+
+stock_mx_ = np.array(([1, -1], [-1, 1]))
+
+def stock_mx():
+    return np.array(([1, -1], [-1, 1]))
+
+def ke_fast(e_x0, e_x1):
+    mult = mxm(e_x0, e_x1)
+    ke = mult * stock_mx
+    return ke
