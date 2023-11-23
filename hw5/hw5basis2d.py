@@ -1,7 +1,7 @@
 import numpy as np
+import math
+import scipy.special as sp
 from matplotlib import pyplot as plt
-
-
 
 # Complete the following code to define a 2D bilinear basis function (Eq. 3.2.14). 
 
@@ -20,7 +20,6 @@ def NBasis(a,xi,eta):
     return (0.5 * (1 + xi_vals[a] * xi)) * (0.5 * (1 + eta_vals[a] * eta))
 
 
-# before: for xi in, return x
 def XMap(x_pts,xi,eta):
     pts_arrays = []
     for pt in x_pts:
@@ -28,11 +27,8 @@ def XMap(x_pts,xi,eta):
     xy_out = np.zeros((2,1))
     for i in range(0, 4):
         nbi = NBasis(i, xi, eta)
-        # print("nbi =", nbi)
         pti = pts_arrays[i]
-        # print("pti =", pti)
         prod = nbi * pti
-        # print("prod =", prod)
         xy_out[0] += prod[0]
         xy_out[1] += prod[1]
     return xy_out
@@ -43,7 +39,6 @@ def PlotTransformationMap(x_pts):
     n_y = 101     
     
     x_pts_arrays = []
-    # put each point as an array into an array of arrays
     for pt in x_pts:
         x_pts_arrays.append(np.array(pt))
     
@@ -71,7 +66,6 @@ def PlotTransformationMap(x_pts):
     plt.show()
 
 
-# input the index of the basis function you want to plot
 def PlotBasisFunction(a):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')

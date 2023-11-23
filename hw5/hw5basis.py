@@ -5,25 +5,24 @@ import sympy as sym
 import math
 
 
-
+# ----------------------------------------
 def XMap(x0,x1,xi,p):
     x = 0
     xvals = np.linspace(x0,x1,p+1)
-    for j in range(0,len(xvals)):
-        x += NBasis(deg=p, N_idx=j, t=xi) * xvals[j]
+    for a in range(0,len(xvals)):
+        x += NBasis(deg=p, N_idx=a, t=xi) * xvals[a]
     return x
 
-
-
+# ----------------------------------------
 def XMapDerv(x0,x1,xi,p):
       x_derv = 0
       xvals = np.linspace(x0,x1,p+1)
       for a in range(0,len(xvals)):
-          x_derv += NBasisDerv(deg=p, N_idx=j, t=xi) * xvals[a]
+          x_derv += NBasisDerv(deg=p, N_idx=a, t=xi) * xvals[a]
       return x_derv
 
 
-
+# ----------------------------------------
 def NBasis(deg, N_idx, t):
     p = deg
     a = N_idx
@@ -76,7 +75,7 @@ class Test_Nbasis(unittest.TestCase):
     # def test_NBasis_arbitrary(self):
 
 
-
+# ----------------------------------------
 def NBasisDerv(deg, N_idx, t):
     p = deg
     a = N_idx
