@@ -9,6 +9,7 @@ import sys
 # evaluate basis bf_idx at xi in param -1,1 equiv to x_in from xmin, xmax
 def eval_basis(bf_idx, xmin, xmax, x_in):
     xi = map_x_to_xi(xmin, xmax, x_in)
+    # print(f"x_in of {x_in} mapped to xi={xi}")
     if bf_idx == 0:
         basis_val = (1 - xi) / 2
     elif bf_idx == 1:
@@ -27,7 +28,7 @@ def eval_basis_deriv(xmin, xmax, bf_idx, x_in):
 def map_x_to_xi(X0,X1,x_in):
     dom_test = X0 <= x_in <= X1
     if not dom_test:
-        sys.exit(f"x must be between {X0} and {X1}")
+        sys.exit(f"map_x_to_xi error: x_in was {x_in}, but must be between {X0} and {X1}")
     xi0 = -1
     xi1 = 1
     xi = ( (x_in - X0) * (xi1 - xi0) / (X1 - X0) ) + xi0
@@ -44,48 +45,57 @@ def map_x_to_xi(X0,X1,x_in):
 # def map_x_to_xi_deriv(X0,X1,X_in):
 #     xi0 = -1
 #     xi1 = 1
+
+def map_x_to_xi_deriv(X0,X1,X_in):
+    xi0 = -1
+    xi1 = 1
+    print(f"len is {X1-X0}")
+    print(f"denom is {xi1 - xi0}")
+    deriv = ((X1 - X0) / (xi1 - xi0))
+    return deriv
+
 #     deriv = ((xi1 - xi0) / (X0 - X1))
 #     return deriv
 
-# def map_xi_to_x(X0,X1,xi):
-#     A = X0
-#     B = X1
-#     xi0 = -1
-#     xi1 = 1
-#     X = ((xi - a) / (b - a)) * (B - A) + A
-#     return X
+def map_xi_to_x(X0,X1,xi):
+    A = X0
+    B = X1
+    xi0 = -1
+    xi1 = 1
+    X = ((xi - xi0) / (xi1 - xi0)) * (B - A) + A
+    return X
 
-# class Test_map_xi_to_x(unittest.TestCase):
-#     def test_biunit_to_biunit(self):
-#         goldXout = -1
-#         testXout = map_xi_to_x(X0=-1, X1=1, xi=-1)
-#         self.assertAlmostEqual(goldXout, testXout)
-#         goldXout = 0
-#         testXout = map_xi_to_x(X0=-1, X1=1, xi=0)
-#         self.assertAlmostEqual(goldXout, testXout)
-#         goldXout = 1
-#         testXout = map_xi_to_x(X0=-1, X1=1, xi=1)
-#         self.assertAlmostEqual(goldXout, testXout)
-#     def test_biunit_to_unit(self):
-#         goldXout = 0
-#         testXout = map_xi_to_x(X0=0, X1=1, xi=-1)
-#         self.assertAlmostEqual(goldXout, testXout)
-#         goldXout = 0.5
-#         testXout = map_xi_to_x(X0=0, X1=1, xi=0)
-#         self.assertAlmostEqual(goldXout, testXout)
-#         goldXout = 1
-#         testXout = map_xi_to_x(X0=0, X1=1, xi=1)
-#         self.assertAlmostEqual(goldXout, testXout)
-#     def test_biunit_to_nontrivial(self):
-#         goldXout = 3
-#         testXout = map_xi_to_x(X0=3, X1=7, xi=-1)
-#         self.assertAlmostEqual(goldXout, testXout)
-#         goldXout = 5
-#         testXout = map_xi_to_x(X0=3, X1=7, xi=0)
-#         self.assertAlmostEqual(goldXout, testXout)
-#         goldXout = 7
-#         testXout = map_xi_to_x(X0=3, X1=7, xi=1)
-#         self.assertAlmostEqual(goldXout, testXout)
+class Test_map_xi_to_x(unittest.TestCase):
+    def test_biunit_to_biunit(self):
+        goldXout = -1
+        testXout = map_xi_to_x(X0=-1, X1=1, xi=-1)
+        self.assertAlmostEqual(goldXout, testXout)
+        goldXout = 0
+        testXout = map_xi_to_x(X0=-1, X1=1, xi=0)
+        self.assertAlmostEqual(goldXout, testXout)
+        goldXout = 1
+        testXout = map_xi_to_x(X0=-1, X1=1, xi=1)
+        self.assertAlmostEqual(goldXout, testXout)
+    def test_biunit_to_unit(self):
+        goldXout = 0
+        testXout = map_xi_to_x(X0=0, X1=1, xi=-1)
+        self.assertAlmostEqual(goldXout, testXout)
+        goldXout = 0.5
+        testXout = map_xi_to_x(X0=0, X1=1, xi=0)
+        self.assertAlmostEqual(goldXout, testXout)
+        goldXout = 1
+        testXout = map_xi_to_x(X0=0, X1=1, xi=1)
+        self.assertAlmostEqual(goldXout, testXout)
+    def test_biunit_to_nontrivial(self):
+        goldXout = 3
+        testXout = map_xi_to_x(X0=3, X1=7, xi=-1)
+        self.assertAlmostEqual(goldXout, testXout)
+        goldXout = 5
+        testXout = map_xi_to_x(X0=3, X1=7, xi=0)
+        self.assertAlmostEqual(goldXout, testXout)
+        goldXout = 7
+        testXout = map_xi_to_x(X0=3, X1=7, xi=1)
+        self.assertAlmostEqual(goldXout, testXout)
 
 class Test_map_x_to_xi(unittest.TestCase):
     def test_biunit_to_biunit(self):

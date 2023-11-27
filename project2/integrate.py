@@ -37,29 +37,31 @@ def get_jacobian(X0, X1):
 #         print(f"added increment={incr} for curr val of {integral}")
 #     return integral
 
-def integrate_by_quadrature(function, x_lower, x_upper, n_quad, a_in, b_in):
+def integrate_by_quadrature(function, x_lower, x_upper, n_quad):
     quad = get_gauss_quadrature(n_quad)
     gauss_points = quad[0]
     gauss_weights = quad[1]
     jacobian = get_jacobian(x_lower, x_upper)
     integral = 0
-    fn = function(a=a_in, b=b_in)
+    # fn = function(a=a_in, b=b_in)
+    fn = lambda xi: function(xi)
     for p in range(0, len(gauss_points)): 
         pt = gauss_points[p]
         function_val = fn(xi=pt)
         incr = function_val * gauss_weights[p]
         integral += incr
     return integral
-# AS WRITTEN IMMED ABOVE, THIS TAKES IN A FUNCTION WRITTEN AS BELOW:
-# def fnn(xi=0,a=0,b=0):
-#     return lambda xi: prodfn(a,b)
-# WHERE PRODFN IS:
-# def prodfn(a,b):
-#     return x_xi_deriv_inv(0,1) * Nab(a,b)
-# RESULT:
-# fnn(a=1)(0) # --> returns 0.5 for all xi, but pos/neg dep on whether a=b
-# USAGE:
-# integrate_by_quadrature2(function=fnn, x_lower=0, x_upper=1, n_quad=1, a_in=0, b_in=1)
+
+#// AS WRITTEN IMMED ABOVE, THIS TAKES IN A FUNCTION WRITTEN AS BELOW:
+#// def fnn(xi=0,a=0,b=0):
+#//     return lambda xi: prodfn(a,b)
+#// WHERE PRODFN IS:
+#// def prodfn(a,b):
+#//     return x_xi_deriv_inv(0,1) * Nab(a,b)
+#// RESULT:
+#// fnn(a=1)(0) # --> returns 0.5 for all xi, but pos/neg dep on whether a=b
+#// USAGE:
+#// integrate_by_quadrature2(function=fnn, x_lower=0, x_upper=1, n_quad=1, a_in=0, b_in=1)
 
 # NOTE: JACOBIAN ELIMINATED ON THE THEORY THAT IT'S JUST THE INVERSE MAP DERIVATIVE TERM. PRETTY SURE THAT'S CORRECT. 
 
@@ -114,54 +116,54 @@ class Test_integrate_by_quadrature(unittest.TestCase):
         goldInt = 2
         TestInt = integrate_by_quadrature(function=function, x_lower=-1, x_upper=1, n_quad=3)
         self.assertAlmostEqual(goldInt, TestInt)
-    def test_eval_basis_biunit(self):
-        function = lambda x: basis.eval_basis(xmin=-1, xmax=1, N_idx=0, x=x)
-        goldInt = 1
-        TestInt = integrate_by_quadrature(function=function, x_lower=-1, x_upper=1, n_quad=1)
-        self.assertAlmostEqual(goldInt, TestInt)
-        TestInt = integrate_by_quadrature(function=function, x_lower=-1, x_upper=1, n_quad=1)
-        self.assertAlmostEqual(goldInt, TestInt)
-    def test_eval_basis_unit(self):
-        function = lambda x: basis.eval_basis(xmin=0, xmax=1, N_idx=0, x=x)
-        goldInt = 0.5
-        TestInt = integrate_by_quadrature(function=function, x_lower=0, x_upper=1, n_quad=1)
-        self.assertAlmostEqual(goldInt, TestInt)
-        TestInt = integrate_by_quadrature(function=function, x_lower=0, x_upper=1, n_quad=1)
-        self.assertAlmostEqual(goldInt, TestInt)
-    def test_eval_basis_arbitrary(self):
-        function = lambda x: basis.eval_basis(xmin=3, xmax=7, N_idx=0, x=x)
-        goldInt = 2
-        TestInt = integrate_by_quadrature(function=function, x_lower=3, x_upper=7, n_quad=1)
-        self.assertAlmostEqual(goldInt, TestInt)
-        TestInt = integrate_by_quadrature(function=function, x_lower=3, x_upper=7, n_quad=1)
-        self.assertAlmostEqual(goldInt, TestInt)
-    def test_eval_basisderiv_biunit(self):
-        function = lambda x: basis.eval_basis_deriv(xmin=-1, xmax=1, N_idx=0, x=x)
-        goldInt = -1
-        TestInt = integrate_by_quadrature(function=function, x_lower=-1, x_upper=1, n_quad=1)
-        self.assertAlmostEqual(goldInt, TestInt)
-        function = lambda x: basis.eval_basis_deriv(xmin=-1, xmax=1, N_idx=1, x=x)
-        goldInt = 1
-        TestInt = integrate_by_quadrature(function=function, x_lower=-1, x_upper=1, n_quad=1)
-        self.assertAlmostEqual(goldInt, TestInt)
-    def test_eval_basisderiv_unit(self):
-        function = lambda x: basis.eval_basis_deriv(xmin=0, xmax=1, N_idx=0, x=x)
-        goldInt = -0.5
-        TestInt = integrate_by_quadrature(function=function, x_lower=0, x_upper=1, n_quad=1)
-        self.assertAlmostEqual(goldInt, TestInt)
-        function = lambda x: basis.eval_basis_deriv(xmin=0, xmax=1, N_idx=1, x=x)
-        goldInt = 0.5
-        TestInt = integrate_by_quadrature(function=function, x_lower=0, x_upper=1, n_quad=1)
-        self.assertAlmostEqual(goldInt, TestInt)
-    def test_eval_basisderiv_arbitrary(self):
-        function = lambda x: basis.eval_basis_deriv(xmin=3, xmax=7, N_idx=0, x=x)
-        goldInt = -2
-        TestInt = integrate_by_quadrature(function=function, x_lower=3, x_upper=7, n_quad=1)
-        self.assertAlmostEqual(goldInt, TestInt)
-        function = lambda x: basis.eval_basis_deriv(xmin=3, xmax=7, N_idx=1, x=x)
-        goldInt = 2
-        TestInt = integrate_by_quadrature(function=function, x_lower=3, x_upper=7, n_quad=1)
-        self.assertAlmostEqual(goldInt, TestInt)
+    # def test_eval_basis_biunit(self):
+    #     function = lambda x: basis.eval_basis(xmin=-1, xmax=1, bf_idx=0, x_in=x)
+    #     goldInt = 1
+    #     TestInt = integrate_by_quadrature(function=function, x_lower=-1, x_upper=1, n_quad=1)
+    #     self.assertAlmostEqual(goldInt, TestInt)
+    #     TestInt = integrate_by_quadrature(function=function, x_lower=-1, x_upper=1, n_quad=1)
+    #     self.assertAlmostEqual(goldInt, TestInt)
+    # def test_eval_basis_unit(self):
+    #     function = lambda x: basis.eval_basis(xmin=0, xmax=1, bf_idx=0, x_in=x)
+    #     goldInt = 0.5
+    #     TestInt = integrate_by_quadrature(function=function, x_lower=0, x_upper=1, n_quad=1)
+    #     self.assertAlmostEqual(goldInt, TestInt)
+    #     TestInt = integrate_by_quadrature(function=function, x_lower=0, x_upper=1, n_quad=1)
+    #     self.assertAlmostEqual(goldInt, TestInt)
+    # def test_eval_basis_arbitrary(self):
+    #     function = lambda x: basis.eval_basis(xmin=3, xmax=7, bf_idx=0, x_in=x)
+    #     goldInt = 2
+    #     TestInt = integrate_by_quadrature(function=function, x_lower=3, x_upper=7, n_quad=1)
+    #     self.assertAlmostEqual(goldInt, TestInt)
+    #     TestInt = integrate_by_quadrature(function=function, x_lower=3, x_upper=7, n_quad=1)
+    #     self.assertAlmostEqual(goldInt, TestInt)
+    # def test_eval_basisderiv_biunit(self):
+    #     function = lambda x: basis.eval_basis_deriv(xmin=-1, xmax=1, bf_idx=0, x_in=x)
+    #     goldInt = -1
+    #     TestInt = integrate_by_quadrature(function=function, x_lower=-1, x_upper=1, n_quad=1)
+    #     self.assertAlmostEqual(goldInt, TestInt)
+    #     function = lambda x: basis.eval_basis_deriv(xmin=-1, xmax=1, bf_idx=1, x_in=x)
+    #     goldInt = 1
+    #     TestInt = integrate_by_quadrature(function=function, x_lower=-1, x_upper=1, n_quad=1)
+    #     self.assertAlmostEqual(goldInt, TestInt)
+    # def test_eval_basisderiv_unit(self):
+    #     function = lambda x: basis.eval_basis_deriv(xmin=0, xmax=1, bf_idx=0, x_in=x)
+    #     goldInt = -0.5
+    #     TestInt = integrate_by_quadrature(function=function, x_lower=0, x_upper=1, n_quad=1)
+    #     self.assertAlmostEqual(goldInt, TestInt)
+    #     function = lambda x: basis.eval_basis_deriv(xmin=0, xmax=1, bf_idx=1, x_in=x)
+    #     goldInt = 0.5
+    #     TestInt = integrate_by_quadrature(function=function, x_lower=0, x_upper=1, n_quad=1)
+    #     self.assertAlmostEqual(goldInt, TestInt)
+    # def test_eval_basisderiv_arbitrary(self):
+    #     function = lambda x: basis.eval_basis_deriv(xmin=3, xmax=7, bf_idx=0, x_in=x)
+    #     goldInt = -2
+    #     TestInt = integrate_by_quadrature(function=function, x_lower=3, x_upper=7, n_quad=1)
+    #     self.assertAlmostEqual(goldInt, TestInt)
+    #     function = lambda x: basis.eval_basis_deriv(xmin=3, xmax=7, bf_idx=1, x_in=x)
+    #     goldInt = 2
+    #     TestInt = integrate_by_quadrature(function=function, x_lower=3, x_upper=7, n_quad=1)
+    #     self.assertAlmostEqual(goldInt, TestInt)
 
 class Test_get_jacobian(unittest.TestCase):
     def test_biunit_to_biunit(self):

@@ -15,8 +15,9 @@ class generate_mesh():
         self.phys_xmax = phys_xmax
         self.n_elem = n_elem
         self.gen_all_nodes()
+        self.mesh_nodes = self.all_nodes
         self.gen_elem_node_coord_indices()
-
+        self.enci = self.elem_node_coord_indices
     def gen_all_nodes(self):
         self.all_nodes = np.linspace(self.phys_xmin, self.phys_xmax, self.n_elem + 1)
         return self.all_nodes
@@ -27,11 +28,11 @@ class generate_mesh():
             arr[1,n] = n+1
         self.elem_node_coord_indices = arr
         return self.elem_node_coord_indices
-    # def get_element_domain(self, e):
-    #     n0_idx = int(self.elem_node_coord_indices[0,e])
-    #     n1_idx = int(self.elem_node_coord_indices[1,e])
-    #     self.element_domain = np.array((self.all_nodes[n0_idx], self.all_nodes[n1_idx]))
-    #     return self.element_domain
+    def m_get_element_domain(self, e):
+        n0_idx = int(self.enci[0,e])
+        n1_idx = int(self.enci[1,e])
+        self.element_domain = np.array((self.all_nodes[n0_idx], self.all_nodes[n1_idx]))
+        return self.element_domain
 
 class Test_gen_all_nodes(unittest.TestCase):
     def test_single_element_all_nodes(self):
@@ -74,34 +75,52 @@ class generate_elements():
         n1_idx = int(self.enci[1,e])
         self.element_domain = np.array((self.all_nodes[n0_idx], self.all_nodes[n1_idx]))
         return self.element_domain
+
     # ke for a single element e given the mesh info passed to generate_elements above    
+    # def gen_ke(self, e):
+    #     # mx = bs.stock_mx()
+    #     mx_ = np.zeros((2,2))
+    #     e_dom = self.get_element_domain(e)
+    #     e_x0 = e_dom[0]
+    #     e_x1 = e_dom[1]
+    #     # mx_mult = bs.mxm(e_x0, e_x1)
+    #     inv_term = bs.x_xi_deriv_inv(e_x0, e_x1)
+    #     jac = ig.get_jacobian(e_x0, e_x1)
+    #     print(f"jac is {jac} and inv term is {inv_term}")  
+    #     theory = bool(inv_term == 1 / jac)
+    #     print(theory) 
+    #     for a in range(0,2):
+    #         N_a_xi_term = bs.eval_basis_deriv(xmin=e_x0, xmax=e_x1, bf_idx=a, x_in=0) # x_in does not matter
+    #         print(f"bf a term = {N_a_xi_term}")
+    #         for b in range(0,2):
+    #             # N_b_xi_term = bs.N_a_xi(b)
+    #             N_b_xi_term = bs.eval_basis_deriv(xmin=e_x0, xmax=e_x1, bf_idx=b, x_in=0) # x_in does not matter
+    #             print(f"bf b term = {N_b_xi_term}")
+    #             # def prodfn(aa, bb):
+    #             #     return jac * N_a_xi_term * N_b_xi_term
+    #             # def quad_fn(aa,bb):
+    #             #     return lambda xi: prodfn(a,b)
+    #             def quad_fn(xi=0, a=0, b=0):
+    #                 return lambda xi: N_a_xi_term * N_b_xi_term * inv_term
+    #             ke_entry_incr = ig.integrate_by_quadrature(function=quad_fn, x_lower=e_x0, x_upper=e_x1, n_quad=1, a_in=a, b_in=b)
+    #             print(f"entry incr is {ke_entry_incr}")
+    #             mx_[a, b] += ke_entry_incr
+    #     ke = mx_
+    #     return ke
+
     def gen_ke(self, e):
-        # mx = bs.stock_mx()
         mx_ = np.zeros((2,2))
         e_dom = self.get_element_domain(e)
         e_x0 = e_dom[0]
         e_x1 = e_dom[1]
-        # mx_mult = bs.mxm(e_x0, e_x1)
         inv_term = bs.x_xi_deriv_inv(e_x0, e_x1)
         jac = ig.get_jacobian(e_x0, e_x1)
-        print(f"jac is {jac} and inv term is {inv_term}")  
-        theory = bool(inv_term == 1 / jac)
-        print(theory) 
         for a in range(0,2):
             N_a_xi_term = bs.eval_basis_deriv(xmin=e_x0, xmax=e_x1, bf_idx=a, x_in=0) # x_in does not matter
-            print(f"bf a term = {N_a_xi_term}")
             for b in range(0,2):
-                # N_b_xi_term = bs.N_a_xi(b)
                 N_b_xi_term = bs.eval_basis_deriv(xmin=e_x0, xmax=e_x1, bf_idx=b, x_in=0) # x_in does not matter
-                print(f"bf b term = {N_b_xi_term}")
-                # def prodfn(aa, bb):
-                #     return jac * N_a_xi_term * N_b_xi_term
-                # def quad_fn(aa,bb):
-                #     return lambda xi: prodfn(a,b)
-                def quad_fn(xi=0, a=0, b=0):
-                    return lambda xi: N_a_xi_term * N_b_xi_term * inv_term
-                ke_entry_incr = ig.integrate_by_quadrature(function=quad_fn, x_lower=e_x0, x_upper=e_x1, n_quad=1, a_in=a, b_in=b)
-                print(f"entry incr is {ke_entry_incr}")
+                prod_fn = lambda xi: N_a_xi_term * N_b_xi_term * inv_term
+                ke_entry_incr = ig.integrate_by_quadrature(function=prod_fn, x_lower=e_x0, x_upper=e_x1, n_quad=1)
                 mx_[a, b] += ke_entry_incr
         ke = mx_
         return ke
@@ -130,36 +149,6 @@ class Test_get_element_domain(unittest.TestCase):
             Gold_element_domain = Gold_elem_coords[e]
             Test_element_domain = m4_elems.get_element_domain(e)
             self.assertTrue(np.allclose(Gold_element_domain, Test_element_domain))
-
-
-
-def get_element_ke(e, ien, nodes, constit_coeff):
-    # 16 - 27 break out as function: local assemble H1 inner product 
-    # for test, use constit_coeff=1, for 3 elems, write out on paper what k1, k2, k3 should be
-    # for e in range(0, n_elem):
-    ke = np.zeros((2,2))
-    # print("initial ke", ke)
-    elem_domain = get_element_domain(e, ien, nodes)
-    xmin, xmax = elem_domain
-    print(f"\n\nelement #{e}: from {xmin} to {xmax}=========")
-    for a in range(0,2):
-        print(f"xmin is still {xmin}")
-        N_a = lambda s, x0=xmin, x1=xmax: basis.eval_basis_deriv(x0, x1, N_idx=a, x_in=s)
-        inspect.getsource(N_a)
-        N_a_str = inspect.getsource(N_a).split(":")[1]
-        print(f"xmin={xmin}")
-        print(N_a_str)
-        for b in range(0,2):
-            N_b = lambda t, xmin=xmin, xmax=xmax: basis.eval_basis_deriv(Xmin=xmin, Xmax=xmax, N_idx=b, x_in=t)
-            N_b_str = inspect.getsource(N_b).split(":")[1]
-            print(N_b_str)
-            x_xi_deriv = lambda w, xmin=xmin, xmax=xmax: basis.map_x_to_xi_deriv(X0=xmin,X1=xmax,X_in=w)
-            integrand = lambda x: N_a(x) * constit_coeff * N_b(x) * (1 / x_xi_deriv(x))
-            soln = integrate.integrate_by_quadrature(function=integrand, x_lower=xmin, x_upper=xmax, n_quad=1, a_in=a, b_in=b)
-            ke[a,b] = soln
-            print(f"integral={soln}")
-    print("resulting ke\n", ke)
-    return ke
 
 class Test_get_element_ke(unittest.TestCase):
     def test_m1_element_ke(self):
@@ -215,7 +204,24 @@ class Test_get_element_ke(unittest.TestCase):
     #     # print("ke_list", ke_list)
     #     return ke_list
 
+# using Hughes, we have fe = he/6 * [(2f1 + f2), (f1 + 2f2)]
+# what are f1 and f2? in my project 1 code they are just f(e_x0) and f(e_x1)
+# why? sth to do with interpolating the forcing function
+# meantime, can write fast_fe as:
 
+def fast_fe(e, mesh, f):
+    e_dom = generate_elements(mesh).get_element_domain(e)
+    e_x0 = e_dom[0]
+    e_x1 = e_dom[1]
+    f_x0 = f(e_x0)
+    f_x1 = f(e_x1)
+    f_21 = (2*f_x0 + f_x1)
+    f_12 = (f_x0 + 2 * f_x1)
+    he = e_x1 - e_x0
+    fe_0 = he * f_21
+    fe_1 = he * f_12
+    fe = np.array(([fe_0], [fe_1]))
+    return fe
 
 
 
