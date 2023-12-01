@@ -124,6 +124,56 @@ class generate_elements():
                 mx_[a, b] += ke_entry_incr
         ke = mx_
         return ke
+    
+    def gen_fe(self, e, f):
+        print(f"\n gen_fe for element idx={e}")
+        # temp fast_fe
+        e_dom = generate_elements(self.mesh).get_element_domain(e)
+        e_x0 = e_dom[0]
+        e_x1 = e_dom[1]
+        f_x0 = f(e_x0)
+        f_x1 = f(e_x1)
+        f_21 = (2*f_x0 + f_x1)
+        print(f"f21 is {f_21}")
+        f_12 = (f_x0 + 2 * f_x1)
+        print(f"f12 is {f_12}")
+        he = e_x1 - e_x0
+        he6 = he/6
+        print(f"he is {he}")
+        fe_0 = he6 * f_21
+        print(f"fe_0 is {fe_0}")
+        fe_1 = he6 * f_12
+        print(f"fe_1 is {fe_1}")
+        fe = np.array(([fe_0], [fe_1]))
+        return fe
+    # def gen_fe2(self, e, f):
+    #     print(f"\n gen_fe for element idx={e}")
+    #     # temp fast_fe
+    #     e_dom = generate_elements(self.mesh).get_element_domain(e)
+    #     e_x0 = e_dom[0]
+    #     e_x1 = e_dom[1]
+    #     # f_x0 = f(e_x0)
+    #     # f_x1 = f(e_x1)
+    #     f_x = lambda x: f(x)
+    #     Na_x = lambda a, x: bs.eval_basis(bf_idx=a, xmin=e_x0, xmax = e_x1, x_in=x)
+    #     prod = lambda a, x: Na_x(x) * f_x(x)
+    #     integ = ig.integrate_by_quadrature(function=prod, x_lower=e_x0, x_upper=e_x1, n_quad=1)
+    #     print(f"integral of Na*f = {integ}")
+    #     Na_x0 = bs.eval_basis(bf_idx=)
+    #     f_21 = (2*f_x0 + f_x1)
+    #     print(f"f21 is {f_21}")
+    #     f_12 = (f_x0 + 2 * f_x1)
+    #     print(f"f12 is {f_12}")
+    #     he = e_x1 - e_x0
+    #     he6 = he/6
+    #     print(f"he is {he}")
+    #     fe_0 = he6 * f_21
+    #     print(f"fe_0 is {fe_0}")
+    #     fe_1 = he6 * f_12
+    #     print(f"fe_1 is {fe_1}")
+    #     fe = np.array(([fe_0], [fe_1]))
+    #     return fe
+
 
 
 class Test_get_element_domain(unittest.TestCase):

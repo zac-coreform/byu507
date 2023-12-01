@@ -47,9 +47,12 @@ def integrate_by_quadrature(function, x_lower, x_upper, n_quad):
     fn = lambda xi: function(xi)
     for p in range(0, len(gauss_points)): 
         pt = gauss_points[p]
+        print(f"gauss pt = {pt}")
         function_val = fn(xi=pt)
+        print(f"function_val = {function_val}")
         incr = function_val * gauss_weights[p]
         integral += incr
+    print(f"integral = {integral}")
     return integral
 
 #// AS WRITTEN IMMED ABOVE, THIS TAKES IN A FUNCTION WRITTEN AS BELOW:

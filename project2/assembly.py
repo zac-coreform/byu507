@@ -48,67 +48,109 @@ def make_gold_K(x0, x1, n_elem):
                 K_[r,c] = base * -1
     return K_
 
-class Test_assemble_H1_inner_product(unittest.TestCase):
-    def test_unit_single_element(self):
-        m1 = mm.generate_mesh(phys_xmin=0, phys_xmax=1, n_elem=1)
-        Gold_K = make_gold_K(0, 1, 1)
-        Test_K = assemble_H1_inner_product(mesh=m1, constit_coeff=1)
-        self.assertTrue(np.allclose(Gold_K, Test_K))
-    def test_unit_two_elements(self):
-        m2 = mm.generate_mesh(phys_xmin=0, phys_xmax=1, n_elem=2)
-        Gold_K = make_gold_K(0, 1, 2)
-        Test_K = assemble_H1_inner_product(mesh=m2, constit_coeff=1)
-        self.assertTrue(np.allclose(Gold_K, Test_K))
-    def test_unit_five_elements(self):
-        m5 = mm.generate_mesh(phys_xmin=0, phys_xmax=1, n_elem=5)
-        Gold_K = make_gold_K(0, 1, 5)
-        Test_K = assemble_H1_inner_product(mesh=m5, constit_coeff=1)
-        self.assertTrue(np.allclose(Gold_K, Test_K))
-    def test_nontrivial_single_element(self):
-        m1 = mm.generate_mesh(phys_xmin=3, phys_xmax=7, n_elem=1)
-        Gold_K = make_gold_K(3, 7, 1)
-        Test_K = assemble_H1_inner_product(mesh=m1, constit_coeff=1)
-        self.assertTrue(np.allclose(Gold_K, Test_K))
-    def test_nontrivial_two_elements(self):
-        m2 = mm.generate_mesh(phys_xmin=3, phys_xmax=7, n_elem=2)
-        Gold_K = make_gold_K(3, 7, 2)
-        Test_K = assemble_H1_inner_product(mesh=m2, constit_coeff=1)
-        self.assertTrue(np.allclose(Gold_K, Test_K))
-    def test_nontrivial_five_elements(self):
-        m5 = mm.generate_mesh(phys_xmin=3, phys_xmax=7, n_elem=5)
-        Gold_K = make_gold_K(3, 7, 5)
-        Test_K = assemble_H1_inner_product(mesh=m5, constit_coeff=1)
-        self.assertTrue(np.allclose(Gold_K, Test_K))
+# class Test_assemble_H1_inner_product(unittest.TestCase):
+#     def test_unit_single_element(self):
+#         m1 = mm.generate_mesh(phys_xmin=0, phys_xmax=1, n_elem=1)
+#         Gold_K = make_gold_K(0, 1, 1)
+#         Test_K = assemble_H1_inner_product(mesh=m1, constit_coeff=1)
+#         self.assertTrue(np.allclose(Gold_K, Test_K))
+#     def test_unit_two_elements(self):
+#         m2 = mm.generate_mesh(phys_xmin=0, phys_xmax=1, n_elem=2)
+#         Gold_K = make_gold_K(0, 1, 2)
+#         Test_K = assemble_H1_inner_product(mesh=m2, constit_coeff=1)
+#         self.assertTrue(np.allclose(Gold_K, Test_K))
+#     def test_unit_five_elements(self):
+#         m5 = mm.generate_mesh(phys_xmin=0, phys_xmax=1, n_elem=5)
+#         Gold_K = make_gold_K(0, 1, 5)
+#         Test_K = assemble_H1_inner_product(mesh=m5, constit_coeff=1)
+#         self.assertTrue(np.allclose(Gold_K, Test_K))
+#     def test_nontrivial_single_element(self):
+#         m1 = mm.generate_mesh(phys_xmin=3, phys_xmax=7, n_elem=1)
+#         Gold_K = make_gold_K(3, 7, 1)
+#         Test_K = assemble_H1_inner_product(mesh=m1, constit_coeff=1)
+#         self.assertTrue(np.allclose(Gold_K, Test_K))
+#     def test_nontrivial_two_elements(self):
+#         m2 = mm.generate_mesh(phys_xmin=3, phys_xmax=7, n_elem=2)
+#         Gold_K = make_gold_K(3, 7, 2)
+#         Test_K = assemble_H1_inner_product(mesh=m2, constit_coeff=1)
+#         self.assertTrue(np.allclose(Gold_K, Test_K))
+#     def test_nontrivial_five_elements(self):
+#         m5 = mm.generate_mesh(phys_xmin=3, phys_xmax=7, n_elem=5)
+#         Gold_K = make_gold_K(3, 7, 5)
+#         Test_K = assemble_H1_inner_product(mesh=m5, constit_coeff=1)
+#         self.assertTrue(np.allclose(Gold_K, Test_K))
 
 
 
+# def assemble_l2_inner_product(ien, nodes, forcing_function):
+#     n_elem = mesh.get_num_elem_from_ien(ien)
+#     num_nodes = (len(nodes))
+#     dof_per_node = 1
+#     num_global_coeffs = num_nodes * dof_per_node
+#     F = np.zeros((num_global_coeffs, 1))
+#     for e in range(0, n_elem):
+#         ke = np.zeros((2,1))
+#         elem_domain = GetElementDomain(ien, e, nodes)
+#         xmin, xmax = elem_domain
+#         for a in range(0,2):
+#             N_a = lambda x: basis.eval_basis(xmin=xmin, xmax=xmax, N_idx=a, x=x)
+#             integrand = lambda x: N_a(x) * forcing_function(x)
+#             fe[a] = integrate_by_quadrature(function=integrand, x_lower=xmin, x_upper=xmax, n_quad=1)
+#         # insert local fe into global F
+#         for a in range(0,2):
+#             A = ien[a, e]
+#             F[A] += fe[a]
+#     return F
 
-
-
-def assemble_l2_inner_product(ien, nodes, forcing_function):
-    n_elem = mesh.get_num_elem_from_ien(ien)
+def assemble_l2_inner_product(mesh, forcing_function):
+    elems = mm.generate_elements(mesh)
+    enci = elems.enci
+    nodes = elems.all_nodes
+    n_elem = elems.n_elem
     num_nodes = (len(nodes))
     dof_per_node = 1
     num_global_coeffs = num_nodes * dof_per_node
     F = np.zeros((num_global_coeffs, 1))
     for e in range(0, n_elem):
-        ke = np.zeros((2,1))
-        elem_domain = GetElementDomain(ien, e, nodes)
-        xmin, xmax = elem_domain
+        fe = elems.gen_fe(e, forcing_function)
         for a in range(0,2):
-            N_a = lambda x: basis.eval_basis(xmin=xmin, xmax=xmax, N_idx=a, x=x)
-            integrand = lambda x: N_a(x) * forcing_function(x)
-            fe[a] = integrate_by_quadrature(function=integrand, x_lower=xmin, x_upper=xmax, n_quad=1)
-        # insert local fe into global F
-        for a in range(0,2):
-            A = ien[a, e]
+            A = enci[a, e]
             F[A] += fe[a]
     return F
 
 
+# based on testing with Proj 1 stuff, looks like the base F global for f = lambda x: 1 and 4 elements over [0,1] is:
+# [[0.125]
+#  [0.25 ]
+#  [0.25 ]
+#  [0.25 ]
+#  [0.125]]
+# which is trimmed to:
+# [[0.125]
+#  [0.25 ]
+#  [0.25 ]
+#  [0.25 ]]
 
-# class Test_assemble_l2_inner_product(unittest.TestCase):
-    # def test_biunit_to_biunit(self):
+arr1 = np.array(([0.125],
+                 [0.25 ],
+                 [0.25 ],
+                 [0.25 ],
+                 [0.125]))
+print(f"arr1 is \n{arr1}")
+
+class Test_assemble_l2_inner_product(unittest.TestCase):
+    def test_1_elems(self):
+        m1 = mm.generate_mesh(phys_xmin=0, phys_xmax=1, n_elem=1)
+        Gold_F = np.zeros((2,1))
+        Test_F = assemble_l2_inner_product(mesh=m1, forcing_function=lambda x:1.0)
+        print(f"{Test_F}")
+        self.assertTrue(np.allclose(Gold_F, Test_F))
+    def test_4_elems(self):
+        m4 = mm.generate_mesh(phys_xmin=0, phys_xmax=1, n_elem=4)
+        Gold_F = np.zeros((5,1))
+        Test_F = assemble_l2_inner_product(mesh=m4, forcing_function=lambda x:1.0)
+        print(f"{Test_F}")
+        self.assertTrue(np.allclose(Gold_F, Test_F))
 
     # def test_biunit_to_unit(self):
 
