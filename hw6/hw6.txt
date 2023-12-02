@@ -1,0 +1,19 @@
+A. 
+In Homework 5, you completed tasks 1-3 of a finite element analysis code using high-degree polynomials. Complete tasks 4 through 8 of the following prompt.
+
+    4. Modify your quadrature routines from operating on the interval [−1, 1] to the interval [0, 1]. In particular, you will need to linearly transform all of your quadrature points to be in the new interval, and all integrals must now be scaled by an additional Jacobian (i.e. change of interval) term.
+
+    5. Change your ID and IEN functions to include more basis functions per element and more global basis functions given the same number of elements.
+
+    6. Modify your local stiffness matrix and your local force vector computations to output a (p + 1) × (p + 1) matrix and a (p + 1) × (1) vector, respectively. Particularly, you may need to change the range of your for loops.
+
+
+
+
+
+
+B.
+Also, create a function to evaluate the partial derivative of a two-dimensional basis function (NBasisPartial) in the accompanying code. Plot the resulting derivatives using PlotBasisFunction(a, True, 0) and PlotBasisFunction(a, True, 1). Then comment the code for NBasisPartial, XMapPartial, JacobianMatrix, JacobianDet, ParametricGradient, and SpatialGradient.
+
+Submit the resulting code.
+

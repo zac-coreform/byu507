@@ -21,9 +21,7 @@ def get_num_elem_from_ien(ien):
     return ien.shape[1]
 
 def get_element_ke(e, ien, nodes, constit_coeff):
-    # 16 - 27 break out as function: local assemble H1 inner product 
-    # for test, use constit_coeff=1, for 3 elems, write out on paper what k1, k2, k3 should be
-    # for e in range(0, n_elem):
+
     ke = np.zeros((2,2))
     print("initial ke", ke)
     elem_domain = get_element_domain(ien, e, nodes)
