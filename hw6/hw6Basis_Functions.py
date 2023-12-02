@@ -143,34 +143,17 @@ class Test_NBasisDerv(unittest.TestCase):
         testXout = NBasisDerv(deg=2, N_idx=2, t=1)
         self.assertAlmostEqual(goldXout, testXout)
 
+# Bernstein polynomials
+def b10(x): return 1 - x
+def b11(x): return x
+def b20(x): return (1 - x)**2
+def b21(x): return 2*(1 - x)*x
+def b22(x): return x**2
+b1list = [b10, b11]
+b2list = [b20, b21, b22]
 
-# ORIGINAL WORKING PROJECT 2 CODE
-# def NBasis(a,x0,x1,x):
-#     denom = x1-x0
-#     if a == 0:
-#         numer = x1-x
-#     elif a == 1:
-#         numer = x-x0
-#     return numer/denom
-
-# def NBasisDerv(a,x0,x1,x):
-#     denom = x1-x0
-#     if a == 0:
-#         numer = -1
-#     elif a == 1:
-#         numer = 1
-#     return numer/denom
-
-# def XMap(x0,x1,ksi):
-#     x = 0
-#     xvals = [x0,x1]
-#     for a in range(0,2):
-#         x += NBasis(a,-1,1,ksi) * xvals[a]
-#     return x
-
-# def XMapDerv(x0,x1,ksi):
-#     x_derv = 0
-#     xvals = [x0,x1]
-#     for a in range(0,2):
-#         x_derv += NBasisDerv(a,-1,1,ksi) * xvals[a]
-#     return x_derv
+# Bernstein polynomial derivatives
+def b20derv(x): return 2*x - 2
+def b21derv(x): return 2 - 4*x
+def b22derv(x): return 2*x
+b2dervlist = [b20derv, b21derv, b22derv]
