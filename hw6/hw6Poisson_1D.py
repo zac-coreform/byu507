@@ -160,7 +160,7 @@ def LocalForce(e,xvals,f,bc_left,bc_right,deg):
     for g in range(0,n_quad):
         w_g = quad_wts[g]
         xi_g = quad_pts[g]
-        x_g = bf.XMap(x0,x1,xi_g,p)0
+        x_g = bf.XMap(x0,x1,xi_g,p)
         x_derv = bf.XMapDerv(x0,x1,xi_g,p)
         
         for a in range(0,n_elem_funcs):
