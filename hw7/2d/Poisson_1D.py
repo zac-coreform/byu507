@@ -1,12 +1,11 @@
 import numpy as np
 import sys
 from matplotlib import pyplot as plt
-import hw7Gauss_Quadrature as gq
-import hw7Boundary_Conditions as bc
-import hw7Basis_Functions as bf
+import Gauss_Quadrature1d as gq
+import Boundary_Conditions as bc
+import Basis_Functions as bf
 import math
 from matplotlib.ticker import (AutoMinorLocator, MultipleLocator)
-import hw7Error_Values as ev
 import matplotlib.ticker as ticker
 from matplotlib.ticker import ScalarFormatter
 

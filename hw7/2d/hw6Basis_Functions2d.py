@@ -2,17 +2,6 @@ import numpy as np
 import sys
 from matplotlib import pyplot as plt
 
-# Also, create a function to evaluate the partial derivative of a two-dimensional basis function (NBasisPartial) in the accompanying code. 
-# Plot the resulting derivatives using PlotBasisFunction(a, True, 0) and PlotBasisFunction(a, True, 1). 
-# Then comment the code for 
-    # NBasisPartial, 
-    # XMapPartial, 
-    # JacobianMatrix, 
-    # JacobianDet, 
-    # ParametricGradient, and 
-    # SpatialGradient.
-
-# previously: NBasis(a,x0,x1,x)
 def NBasis(a,xi,eta):
     if a == 0:
       xi_a = -1
@@ -30,12 +19,22 @@ def NBasis(a,xi,eta):
     val=(1/4)*(1+xi*xi_a)*(1+eta*eta_a)
     return val
 
+# for a = 0, vals are -1, -1, so
+# (1/4)*(1-x)*(1-y)
+# for a = 1, vals are 1, -1, so
+# (1/4)*(1+x)*(1-y)
+# for a = 2, vals are 1, 1, so
+# (1/4)*(1+x)*(1+y)
+# for a = 3, vals are -1, 1, so
+# (1/4)*(1-x)*(1+y)
+
 # code from last time
 def NBasisZ(a,xi,eta):
     xi_vals = [-1,1,1,-1]
     eta_vals = [-1,-1,1,1]
     return (0.5 * (1 + xi_vals[a] * xi)) * (0.5 * (1 + eta_vals[a] * eta))
-
+# for a = 3, vals are -1, 1, so
+# (0.5 * (1 - x)) * (0.5 * (1 + y))
 
 def NBasisPartial(a,xi,eta,direction):
     # partial derivatives of BFs 0-3 are:
