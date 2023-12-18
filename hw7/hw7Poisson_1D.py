@@ -13,12 +13,11 @@ from matplotlib.ticker import ScalarFormatter
 def CreateIENArray(deg, n_elems):
     p = deg
     bfs_per_elem = p + 1
-    # total_bfs = p * n_elems + 1
     IEN = np.zeros((bfs_per_elem, n_elems)).astype('int')
     for e in range(0, n_elems):
         for a in range(0, bfs_per_elem):
             Q = a + p * e
-            IEN[a,e]=Q
+            IEN[a,e] = Q
     return IEN
 
 def CreateIDArray(bc_left, bc_right, deg, n_elems):
@@ -44,28 +43,24 @@ def CreateIDArray(bc_left, bc_right, deg, n_elems):
         sys.exit("Don't know this boundary condition")
     return ID
 
-def CreateXVals(phys_dom_0, phys_dom_1, ien_or_n_elems):
+def CreateNodes(phys_dom_0, phys_dom_1, ien_or_n_elems):
     if isinstance(ien_or_n_elems, np.ndarray):
-        n_elems = ien.shape[1]
+        n_elems = ien_or_n_elems.shape[1]
     elif isinstance(ien_or_n_elems, int):
         n_elems = ien_or_n_elems
     else:
         sys.exit("last arg must be ien array or n_elems int")
-    xvals = np.linspace(phys_dom_0,phys_dom_1,n_elems+1)
-    return xvals
+    nodes = np.linspace(phys_dom_0,phys_dom_1,n_elems+1)
+    return nodes
 
-def LocalStiffness(e, xvals, bc_left, bc_right, deg):
-    # changing to degree-determined quadrature
+CreateXVals = CreateNodes
+
+def LocalStiffness(e, xvals, bc_left, bc_right, deg, quadrature_in):
     p = deg
     bfs_per_elem = p + 1
-    # degree 2n − 1 polynomials, where n is number of sample points used // n = (p+1)/2
-    n_quad = math.ceil((p + 1) / 2)
-    quadrature = gq.Gauss_Quadrature1d(n_quad=n_quad,quad_domain_0=0, quad_domain_1=1)
-    #. ^ with quad_domain_N args, returns pts mapped to [0,1]
-
     x0 = xvals[e]
     x1 = xvals[e+1]
-    
+    quadrature = quadrature_in
     quad_wts = quadrature.quad_wts
     quad_pts = quadrature.quad_pts
     n_quad = quadrature.n_quad
@@ -113,16 +108,12 @@ def LocalStiffness(e, xvals, bc_left, bc_right, deg):
     
     return ke
 
-def LocalForce(e,xvals,f,bc_left,bc_right,deg):
-    # as above in ke, changing to deg-determined quadrature
+def LocalForce(e,xvals,f,bc_left,bc_right,deg,quadrature_in):
     p = deg
     bfs_per_elem = p + 1
-    n_quad = math.ceil((p + 1) / 2)
-    quadrature = gq.Gauss_Quadrature1d(n_quad=n_quad,quad_domain_0=0, quad_domain_1=1)
-
     x0 = xvals[e]
     x1 = xvals[e+1]
-    
+    quadrature = quadrature_in
     quad_wts = quadrature.quad_wts
     quad_pts = quadrature.quad_pts
     n_quad = quadrature.n_quad
@@ -191,61 +182,61 @@ def LocalForce(e,xvals,f,bc_left,bc_right,deg):
                 pass
     return fe
 
-def FEM_Poisson(bc_left,bc_right,f,xvals,deg):
-    # print(f"STARTING FEM_POISSON")
-    p = deg
-    bfs_per_elem = p + 1
-    n_quad = math.ceil((p + 1) / 2)
-    # # print(f"calc'd n_quad for p={p} is {n_quad}")
-    quadrature = gq.Gauss_Quadrature1d(n_quad=n_quad,quad_domain_0=0, quad_domain_1=1)
-    n_elems = len(xvals)-1
-    IEN = CreateIENArray(p, n_elems)
-    # def CreateIDArray(bc_left, bc_right, deg, n_elems):
-    ID = CreateIDArray(bc_left, bc_right, p, n_elems)
-    n_unknowns = int(max(ID)) + 1
-    K = np.zeros((n_unknowns,n_unknowns))
-    F = np.zeros((n_unknowns,1))
-    ke_list = []
-    fe_list = []
-    for e in range(0,n_elems):
-        ke = LocalStiffness(e,xvals,bc_left,bc_right,p)
-        # print(f"ke for elem {e} is \n{ke}")
-        ke_list.append(ke)
-        fe = LocalForce(e,xvals,f,bc_left,bc_right,p)
-        fe_list.append(fe)
-        # print(f"fe for elem {e} is \n{fe}")
-        for a in range(0,bfs_per_elem):
-            P = IEN[a,e]
-            A = ID[P]
-            if A == -1:
-                continue
-            F[A] += fe[a]
-            for b in range(0,bfs_per_elem):
-                Q = IEN[b,e]
-                B = ID[Q]
-                if B == -1:
+class FEM_Poisson():
+    def __init__(self, bc_left, bc_right, f, nodes, deg):
+        self.bc_left = bc_left
+        self.bc_right = bc_right
+        self.f = f
+        self.nodes = nodes
+        self.p = deg
+        self.bfs_per_elem = self.p + 1
+        self.quadrature = gq.Gauss_Quadrature1d(n_quad=7,quad_domain_0=0, quad_domain_1=1)
+        self.n_elems = len(nodes)-1
+        self.IEN = CreateIENArray(self.p, self.n_elems)
+        self.ID = CreateIDArray(self.bc_left, self.bc_right, self.p, self.n_elems)
+        self.n_unknowns = int(max(self.ID)) + 1
+        self.plot_domain = np.linspace(0,1,self.n_unknowns)
+        self.K = np.zeros((self.n_unknowns,self.n_unknowns))
+        self.F = np.zeros((self.n_unknowns,1))
+        self.ke_list = []
+        self.fe_list = []
+        for e in range(0,self.n_elems):
+            self.ke = LocalStiffness(e,self.nodes,self.bc_left,self.bc_right,self.p, self.quadrature)
+            self.ke_list.append(self.ke)
+            self.fe = LocalForce(e,self.nodes,self.f,self.bc_left,self.bc_right,self.p, self.quadrature)
+            self.fe_list.append(self.fe)
+            for a in range(0,self.bfs_per_elem):
+                P = self.IEN[a,e]
+                A = self.ID[P]
+                if A == -1:
                     continue
-                K[A,B] += ke[a,b]
-    # print(f"final K is \n{K}")
-    # print(f"final F is \n{F}")
+                self.F[A] += self.fe[a]
+                for b in range(0,self.bfs_per_elem):
+                    Q = self.IEN[b,e]
+                    B = self.ID[Q]
+                    if B == -1:
+                        continue
+                    self.K[A,B] += self.ke[a,b]
+        self.D = np.linalg.solve(self.K,self.F)
 
-    Kdet = np.linalg.det(K)
-    Kcond = np.linalg.cond(K)
+class PlotSolution():
+    def __init__(self, bc_left, bc_right, xvals, D_in, title=""):
+        self.bc_left = bc_left
+        self.bc_right = bc_right
+        self.xvals = xvals
+        self.D_in = D_in
+        self.title = title
+        if self.bc_left.isDir:
+            self.D_out = np.concatenate([[[self.bc_left.b3/self.bc_left.b1]],self.D_in], 0)
+        elif self.bc_right.isDir:
+            self.D_out = np.concatenate([self.D_in,[[self.bc_right.b3 / self.bc_right.b1]]], 0)
+        else:
+            self.D_out = self.D_in
+    def make_plot(self):
+        plt.plot(self.xvals,self.D_out)
+        if self.title != "":
+            plt.title(self.title) 
 
-    D = [IEN, ID, K, F, ke_list, fe_list]
-
-    # D = np.linalg.solve(K,F)
-    return D
-
-def PlotSolution(bc_left,bc_right,xvals,D,title=""):
-    if bc_left.isDir:
-        D = np.concatenate([[[bc_left.b3/bc_left.b1]],D], 0)
-    if bc_right.isDir:
-        D = np.concatenate([D,[[bc_right.b3 / bc_right.b1]]], 0)
-    plt.plot(xvals,D)
-    if title != "":
-        plt.title(title)    
-    
 class GetFullD():
     def __init__(self, bcl, bcr, D_in):
         self.bc_left = bcl
@@ -264,8 +255,7 @@ class PlotConvergenceComparison():
     def __init__(self, deg, bcl, bcr, f, u_exact, u_exact_derv, n_elems_vec=[2,4,8,16,32,64]):
         self.p = deg
         self.bfs_per_elem = self.p + 1
-        self.n_quad = math.ceil((self.p + 1) / 2)
-        self.quadrature = gq.Gauss_Quadrature1d(n_quad=self.n_quad,quad_domain_0=0, quad_domain_1=1)
+        self.quadrature = gq.Gauss_Quadrature1d(5,0,1)
         self.quad_wts = self.quadrature.quad_wts
         self.quad_pts = self.quadrature.quad_pts
         self.bcl = bcl
@@ -276,9 +266,10 @@ class PlotConvergenceComparison():
         self.n_elems_vec = n_elems_vec
         
         self.generate_log_h()
-        self.generate_xvals()
+        self.generate_nodes()
         self.generate_D_vec()
         self.generate_err_vecs()
+
 
     def generate_log_h(self):
         h_vec_ = []
@@ -296,27 +287,42 @@ class PlotConvergenceComparison():
         self.log_h_vec_trunc = log_h_vec_trunc_
         self.log_h_vec_trunc.reverse()
 
-    def generate_xvals(self):
-        x_vals_dict = {}
+    def generate_nodes(self, L=1.):
+        # make nodes list for each number of elements, n=2,4,8... 
+        self.L = L
+        nodes_dict = {}
         for i in range(0, len(self.n_elems_vec)):
+            # get number of elements n from 2,4,8...
             n = self.n_elems_vec[i]
             n_key = str(n)
-            n_xvals = CreateXVals(0,1,n)
-            x_vals_dict[n_key] = n_xvals
-        self.x_vals_all_dict = x_vals_dict
-        return self.x_vals_all_dict
+            # create and store nodes list for n elements
+            n_xvals = CreateNodes(0,self.L,n)
+            nodes_dict[n_key] = n_xvals
+        # list of nodes lists for n_elems=2,4,8...
+        self.nodes_all_dict = nodes_dict
+        return self.nodes_all_dict
     
+    # WHERE FEM_POISSON IS ACTUALLY EXECUTED
     def generate_D_vec(self):
+        fem_dict_ = {}
         initial_D_dict_ = {}
         full_D_dict_ = {}
         for i in range(0, len(self.n_elems_vec)):
+            # get number of elements from 2,4,8...
             n = self.n_elems_vec[i]
             n_key = str(n)
-            xvals = self.x_vals_all_dict[n_key]
-            n_initial_D = FEM_Poisson(self.bcl, self.bcr, self.f, xvals, self.p)
+            # get nodes list for n elements
+            nodes = self.nodes_all_dict[n_key]
+            # run FEM_Poisson to get initial D vec
+            n_fem = FEM_Poisson(self.bcl, self.bcr, self.f, nodes, self.p)
+            # store initial D vecs
+            fem_dict_[n_key] = n_fem
+            n_initial_D = n_fem.D
             initial_D_dict_[n_key] = n_initial_D
+            # augment initial D vec if Dir BCs require
             n_full_D = GetFullD(self.bcl, self.bcr, n_initial_D).fullD
             full_D_dict_[n_key] = n_full_D
+        self.fem_instances_dict = fem_dict_
         self.initial_D_dict = initial_D_dict_
         self.full_D_dict = full_D_dict_
 
@@ -330,8 +336,11 @@ class PlotConvergenceComparison():
             n = self.n_elems_vec[i]
             n_key = str(n)
             n_dfull = self.full_D_dict[n_key]
-            n_xvals = self.x_vals_all_dict[n_key]
-            n_err_vec = ev.ErrorValues(n_dfull, n_xvals, self.p, self.quadrature, self.u_exact, self.u_exact_derv)
+            n_xvals = self.nodes_all_dict[n_key]
+            # get the quadrature of this n_elem's instance of FEM_Poisson
+            # n_quadrature = self.fem_instances_dict[n_key].quadrature
+            n_quadrature = gq.Gauss_Quadrature1d(7,0,1)
+            n_err_vec = ev.ErrorValues(n_dfull, n_xvals, self.p, n_quadrature, self.u_exact, self.u_exact_derv)
             n_err_l2 = n_err_vec[0]
             n_err_h1 = n_err_vec[1]
             l2_err_vec_.append(n_err_l2)
@@ -347,8 +356,9 @@ class PlotConvergenceComparison():
 
     def plot_l2_h1_errs(self):
         fig, ax = plt.subplots()
-        # self.h_vec.reverse()
-        xdom = self.h_vec
+        plt.xlabel("Element length (h)")
+        plt.ylabel("Error ($u^h - u$)")
+        xdom = self.h_vec # logs of n=2,4,8...
         l2err = self.l2_err_vec
         h1err = self.h1_err_vec
         ax.plot(xdom, l2err, label='L2 error')
@@ -358,11 +368,7 @@ class PlotConvergenceComparison():
         formatter.set_scientific(False)
         ax.xaxis.set_major_formatter(formatter)
         ax.xaxis.set_major_locator(ticker.FixedLocator(self.h_vec))
-        # instantiate top axis
-        # ax2 = ax.twiny()
-        # top = self.n_elems_vec
-        # ax2.plot(top, label='num elements')
-        # ax2.xaxis.set_major_locator(ticker.FixedLocator(self.n_elems_vec))
+
         ax.legend()
         plt.show()
 

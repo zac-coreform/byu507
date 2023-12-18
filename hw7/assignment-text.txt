@@ -3,6 +3,18 @@ Complete the convergence study (Task 2) and accuracy study (Task 3) of the promp
 CE_ME_507_High_Order_Polynomials_Prompt.pdf  Download 
 
 
+e0 = log( ( integral_omega( (u^h - u)**2 d-omega ) )**(0.5) ) <= 
+        log(c) + (p + 1) * log(h) + log( || u ||_(p+1) )
+
+# 
+e1 = log( ( integral_omega( (u^h - u)**2 + (u^h_x - u_x)**2 d-omega ) )**(0.5) ) <= 
+        # since m=1, p+1-m = p
+        log(c) + p * log(h) + log( || u ||_(p+1) )
+
+
+
+
+
 
 
 Also, modify your Gaussian Quadrature routine to work for two-dimensional quadrilaterals. To do so, take your one-dimensional Gaussian quadrature code and make the following changes:
