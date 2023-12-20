@@ -1,7 +1,6 @@
 import numpy as np
 import sys
 from matplotlib import pyplot as plt
-import Gauss_Quadrature2d as gq2
 
 def NBasis(a,xi,eta):
     if a == 0:
@@ -20,13 +19,31 @@ def NBasis(a,xi,eta):
     val=(1/4)*(1+xi*xi_a)*(1+eta*eta_a)
     return val
 
+# for a = 0, vals are -1, -1, so
+# (1/4)*(1-x)*(1-y)
+# for a = 1, vals are 1, -1, so
+# (1/4)*(1+x)*(1-y)
+# for a = 2, vals are 1, 1, so
+# (1/4)*(1+x)*(1+y)
+# for a = 3, vals are -1, 1, so
+# (1/4)*(1-x)*(1+y)
+
 # code from last time
 def NBasisZ(a,xi,eta):
     xi_vals = [-1,1,1,-1]
     eta_vals = [-1,-1,1,1]
     return (0.5 * (1 + xi_vals[a] * xi)) * (0.5 * (1 + eta_vals[a] * eta))
+# for a = 3, vals are -1, 1, so
+# (0.5 * (1 - x)) * (0.5 * (1 + y))
 
 def NBasisPartial(a,xi,eta,direction):
+    # partial derivatives of BFs 0-3 are:
+    # A   WRT_XI          WRT_ETA
+    # 0   eta/4 - 1/4     xi/4 - 1/4
+    # 1   1/4 - eta/4    -xi/4 - 1/4
+    # 2   eta/4 + 1/4     xi/4 + 1/4
+    # 3  -eta/4 - 1/4     1/4 - xi/4
+
     # tabulating the coeffs and constants with 0.25 factored out gives:
     wrt_xi_coeff_base = [1, -1, 1, -1]
     wrt_xi_const_base = [-1, 1, 1, -1]
@@ -125,7 +142,7 @@ def SpatialGradient(a,x_pts,xi,eta):
 
 
 # input four points as a list of lists
-# e.g. xpts = [[2,1],[5,-1],([8,0]),([4,4])]
+# e.g. xpts = [[2,1],[5,-1],([8,0]),([4,4])]  
 def PlotTransformationMap(x_pts):
     n_x = 100
     n_y = 101     
@@ -138,6 +155,7 @@ def PlotTransformationMap(x_pts):
     yvals = np.linspace(-1,1,n_y)
     
     X, Y = np.meshgrid(xvals, yvals)   
+    
     
     N = np.zeros((3,n_x,n_y))
     for i in range(0,len(xvals)):
@@ -178,66 +196,3 @@ def PlotBasisFunction(a, derivative = False, derv_direction = 0):
     ax.set_zlabel('Z Label')
     
     plt.show()
-
-def PlotPoints2d(x_,y_,z_):
-    # if type(x_) == int and type(y_) == int and type(z_) == int:
-    #    x_plot = x_
-    #    y_plot = y_
-    #    z_plot = z_
-
-    
-
-    # plt.rcParams["figure.figsize"] = [7.50, 7.50]
-    plt.rcParams["figure.autolayout"] = True
-
-    fig = plt.figure()
-    fig.set_size_inches(6, 6)
-    ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(x_, y_, z_, c='red', marker='o', s=100)
-
-    ax.set_xlabel("x axis")
-    ax.set_ylabel("y axis")
-    ax.set_zlabel("z axis")
-
-    ax.set_xlim(-1,1)
-    ax.set_ylim(-1,1)
-    ax.set_zlim(-1,1)
-
-    plt.show()
-
-def PlotQuadrature2d(x_,y_,z_):
-    gq2.
-    # plt.rcParams["figure.figsize"] = [7.50, 7.50]
-    plt.rcParams["figure.autolayout"] = True
-
-    fig = plt.figure()
-    fig.set_size_inches(6, 6)
-    ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(x_, y_, z_, c='red', marker='o', s=100)
-
-    ax.set_xlabel("x axis")
-    ax.set_ylabel("y axis")
-    ax.set_zlabel("z axis")
-
-    ax.set_xlim(-1,1)
-    ax.set_ylim(-1,1)
-    ax.set_zlim(-1,1)
-
-    plt.show()
-
-# PLOT LINE
-# import numpy as np
-# from matplotlib import pyplot as plt
-# plt.rcParams["figure.figsize"] = [7.50, 3.50]
-# plt.rcParams["figure.autolayout"] = True
-# x = np.linspace(-4 * np.pi, 4 * np.pi, 50)
-# y = np.linspace(-4 * np.pi, 4 * np.pi, 50)
-# z = x ** 2 + y ** 2
-# fig = plt.figure()
-# ax = fig.add_subplot(111, projection='3d')
-# ax.plot(x, y, z)
-# plt.show()
-    
-# https://jakevdp.github.io/PythonDataScienceHandbook/04.12-three-dimensional-plotting.html
-    
-# https://jakevdp.github.io/PythonDataScienceHandbook/
