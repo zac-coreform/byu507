@@ -104,7 +104,8 @@ def XMapPartial(x_pts,xi,eta,direction):
     xpartial = np.zeros(len(x_pts[0]))
     for a in range(0,4):
         # same as XMap but with derivs
-        xpartial += NBasisPartial(a, xi, eta, direction)
+        # xpartial += NBasisPartial(a, xi, eta, direction)
+        xpartial += x_pts[a] * NBasisPartial(a, ksi, eta, direction)
     # with linear BFs, these are going to almost always be zero, no?
     # returns a "point"?
     return xpartial

@@ -1,7 +1,7 @@
 import numpy as np
 import sys
 from matplotlib import pyplot as plt
-import Gauss_Quadrature2d as gq2
+import p3Gauss_Quadrature_2D as gq2
 
 def NBasis(a,xi,eta):
     if a == 0:
@@ -205,25 +205,24 @@ def PlotPoints2d(x_,y_,z_):
 
     plt.show()
 
-def PlotQuadrature2d(x_,y_,z_):
-    gq2.
-    # plt.rcParams["figure.figsize"] = [7.50, 7.50]
-    plt.rcParams["figure.autolayout"] = True
+# def PlotQuadrature2d(x_,y_,z_):
+#     # plt.rcParams["figure.figsize"] = [7.50, 7.50]
+#     plt.rcParams["figure.autolayout"] = True
 
-    fig = plt.figure()
-    fig.set_size_inches(6, 6)
-    ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(x_, y_, z_, c='red', marker='o', s=100)
+#     fig = plt.figure()
+#     fig.set_size_inches(6, 6)
+#     ax = fig.add_subplot(111, projection='3d')
+#     ax.scatter(x_, y_, z_, c='red', marker='o', s=100)
 
-    ax.set_xlabel("x axis")
-    ax.set_ylabel("y axis")
-    ax.set_zlabel("z axis")
+#     ax.set_xlabel("x axis")
+#     ax.set_ylabel("y axis")
+#     ax.set_zlabel("z axis")
 
-    ax.set_xlim(-1,1)
-    ax.set_ylim(-1,1)
-    ax.set_zlim(-1,1)
+#     ax.set_xlim(-1,1)
+#     ax.set_ylim(-1,1)
+#     ax.set_zlim(-1,1)
 
-    plt.show()
+#     plt.show()
 
 # PLOT LINE
 # import numpy as np

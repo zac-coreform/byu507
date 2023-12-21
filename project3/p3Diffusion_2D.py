@@ -12,20 +12,64 @@ import matplotlib
 from scipy import integrate
 from matplotlib import pyplot as plt
 
-import GaussianQuadrature as gq
-import surfacemesh
-import Boundary_Conditions as bc
-
-import Basis_Functions as bf
+import p3Gauss_Quadrature_2D as gq
+import p3Surface_Mesh as sm
+import p3Boundary_Conditions as bc
+import p3Basis_Functions_2D as bf
 
 
 def CreateIENArray(mesh):
-    # TODO: Complete this
-    pass
-    
+    n_elems = len(mesh.faces) # 8
+    elems = mesh.faces
+    bfs_per_elem = NBasisFunctions(mesh,0) # random representative
+    IEN = np.zeros((bfs_per_elem, n_elems)).astype('int')
+    for e_ in range(0, n_elems):
+        for a_ in range(0, bfs_per_elem):
+            elem_arr = elems[e_]
+            Q = elem_arr[a_]
+            IEN[a_,e_] = Q
+    return IEN
+
+
+# hacky tired brain; surely there's some simple way to do this
+def get_all_vertices(mesh):
+    fcs = mesh.faces
+    loop = len(fcs)
+    mins = []
+    maxes = []
+    for i in range(0, loop):
+        f_vs = fcs[i]
+        f_min = min(f_vs)
+        f_max = max(f_vs)
+        mins.append(f_min)
+        maxes.append(f_max)
+    min_ = min(mins)
+    max_ = max(maxes) + 1
+    vs = np.arange(min_, max_, 1, int)
+    return vs
+
+# BELOW, ID ARRAY: 
+# IN dirichlet_dofs = set of kv pairs where 
+    # boundaries = [self.left_bc,self.right_bc,self.down_bc,self.top_bc]
+    # keys = if Dir boundary --> add keys in boundary's node_to_edge dict
+    # value = boundary.rhs/boundary.sol_mult = (g?)
 def CreateIDArray(mesh,dirichlet_dofs):
-    # TODO: Complete this
-    pass
+    n_elems = len(mesh.faces)
+    vs = get_all_vertices(mesh)
+    n_vs = len(vs)
+    ID = np.zeros((2, n_vs)).astype('int')
+    ID[0] += vs
+    b_vs = mesh.boundary_vertices()
+    for i in range(0, len(vs)):
+        if vs[i] in b_vs:
+            if vs[i] in dirichlet_dofs:
+                ID[1,i] = -1
+    counter = 0
+    for j in range(0, len(vs)):
+        if ID[1,j] != -1:
+            ID[1,j] = counter
+            counter += 1
+    return ID
 
 # determine the number of basis functions on a mesh element
 def NBasisFunctions(mesh,elem_idx):
@@ -41,14 +85,11 @@ def NBasisFunctions(mesh,elem_idx):
 # Evaluate thermal conductivity of an element at its center
 def EvaluateKappaAtElementCenter(mesh,elem_idx,kappa):
     x_pts = mesh.get_face_points(elem_idx)[:,0:2]     
-
     if len(x_pts)==4:
         x_center = bf.XMap(x_pts, 0, 0, 4)
     else:
         x_center = bf.XMap(x_pts, 0.33, 0.33, 3)
-
     elem_kappa = kappa(x_center[0],x_center[1])
-
     return elem_kappa
 
 def LocalStiffness(mesh,elem_idx,kappa,quadrature):    
@@ -135,18 +176,15 @@ def LocalForceBoundaryConditions(mesh,elem_idx,fe):
                 fe[0] += integrate.quadrature(n0,-1,1)[0] * h_val * halflength
                 fe[3] += integrate.quadrature(n3,-1,1)[0] * h_val * halflength
 
-    
     # TODO: Complete and comment this
     if len(dirichlet_nodes) != 0:
         elem_kappa = EvaluateKappaAtElementCenter(mesh, elem_idx, kappa)
 
         while len(dirichlet_nodes) != 0:
-            
+            # popitem removes the last-added item in a dictionary
             d_data = dirichlet_nodes.popitem()
             # TODO: Fill in here
             pass
-            
-
 
     return fe
 
@@ -168,16 +206,68 @@ def FEM_Diffusion(mesh,boundaries,f,quadrature,kappa):
     for bdry in boundaries:
         if bdry.IsDirichlet():
             for key in bdry.node_to_edge:
-                dirichlet_dofs.add(key)
-    
+                dirichlet_dofs.add(key)    
     IEN = CreateIENArray(mesh)
     ID = CreateIDArray(mesh,dirichlet_dofs)
-
-    
     # TODO: Complete this
     D = np.zeros(len(mesh.vs))
     return D
+
+
+class FEM_Diffusion2d():
+    def __init__(self,mesh,boundaries,f,quadrature,kappa):
+        self.mesh = mesh
+        self.boundaries = boundaries
+        self.f = f
+        self.quadrature = quadrature
+        self.kappa = kappa
+        self.n_elem = len(mesh.faces)
+
+        # self.D = np.zeros(len(self.mesh.vs))
+        #.^ ?? where'd this come from? cf. below, D = linalg solve
+
+        self.dirichlet_dofs = set()
+        for bdry in self.boundaries:
+            if bdry.IsDirichlet():
+                for key in bdry.node_to_edge:
+                    self.dirichlet_dofs.add(key)
+
+        self.IEN = CreateIENArray(self.mesh)
+        self.ID = CreateIDArray(self.mesh,self.dirichlet_dofs)
+        self.n_unknowns = int(max(self.ID[1])) + 1
+        
+        self.K = np.zeros((self.n_unknowns,self.n_unknowns))
+        self.F = np.zeros((self.n_unknowns,1))
+        self.ke_list = []
+        self.fe_list = []
+
+        for e in range(0, self.n_elems):
+            ke = LocalStiffness(self.mesh,e,self.kappa,self.quadrature)
+            self.ke_list.append(ke)
+            fe = LocalForce(self.mesh,e,self.f,self.boundaries,self.kappa,self.quadrature)
+            self.fe_list.append(fe)
+
+            # careful here -- see email about BFs, one per vertex, etc
+            n_elem_bfs = NBasisFunctions(self.mesh, e)
             
+            for a in range(0,n_elem_bfs):
+                P = self.IEN[a,e]
+                A = self.ID[P]
+                if A == -1:
+                    continue
+                self.F[A] += self.fe[a]
+                for b in range(0,n_elem_bfs):
+                    Q = self.IEN[b,e]
+                    B = self.ID[Q]
+                    if B == -1:
+                        continue
+                    self.K[A,B] += self.ke[a,b]
+            self.D = np.linalg.solve(self.K,self.F)
+
+    def solve(self):
+        # np.linalg.solve(...)
+        return self.D
+
 
 # TODO: Comment and complete this code
 def ConcatenateToFullD(mesh,boundaries,D):
@@ -213,9 +303,11 @@ def PlotTriangulationSolution(mesh,DTotal):
     faces = []
     for i in range(0,len(mesh.faces)):
         if mesh.is_quadrilateral_face(i):
+            print(f"quad face")
             faces.append([mesh.faces[i][0],\
                           mesh.faces[i][1],\
                           mesh.faces[i][2]])
+            print(f"")
             faces.append([mesh.faces[i][2],\
                           mesh.faces[i][3],\
                           mesh.faces[i][0]])
@@ -240,13 +332,6 @@ def PlotTriangulationSolution(mesh,DTotal):
     
     ax1.triplot(triangles, color='1',linewidth=0.1)
 
-
-
-
-
-
-
-    
     
 # Define thermal conductivity information for a brick
 # 20 cm x 10 cm brick
@@ -289,29 +374,33 @@ def ProcessIntoSideSets(mesh):
 
 # Problem execution
 
-# mesh = surfacemesh.SurfaceMesh.FromOBJ_FileName("brick.obj")    
-mesh = surfacemesh.SurfaceMesh.FromOBJ_FileName("rectangle_plate_COARSE.obj")    
-# mesh = surfacemesh.SurfaceMesh.FromOBJ_FileName("rectangle_plate.obj")    
-[left,bottom,right,top]=ProcessIntoSideSets(mesh)
-left_bc = bc.BoundaryCondition(0, left)
-right_bc = bc.BoundaryCondition(2, right)
-down_bc = bc.BoundaryCondition(1, bottom)
-top_bc = bc.BoundaryCondition(3, top)
+class run_problem():
+    def __init__(self, n_quad):
+        self.n_quad = n_quad
+        self.temp = 0
+        self.f = lambda x: 0
+        self.quadrature = gq.Gauss_Quadrature2d(self.n_quad,-1,1,2)
+        self.kappa = BrickKappa
+        self.make_mesh()
+        self.make_bcs()
+    def make_mesh(self):
+        self.mesh = sm.SurfaceMesh.FromOBJ_FileName("files/rectangle_plate_COARSE.obj")
+        [self.left,self.bottom,self.right,self.top]=ProcessIntoSideSets(self.mesh)
+    def make_bcs(self):
+        self.left_bc = bc.BoundaryCondition(0, self.left)
+        self.right_bc = bc.BoundaryCondition(2, self.right)
+        self.down_bc = bc.BoundaryCondition(1, self.bottom)
+        self.top_bc = bc.BoundaryCondition(3, self.top)
+        self.left_bc.InitializeData(bc.BCType.Neumann, 0, 0, 1)
+        self.right_bc.InitializeData(bc.BCType.Neumann, 0, 0, 1)
+        self.down_bc.InitializeData(bc.BCType.Dirichlet, self.temp, 1, 0)
+        self.top_bc.InitializeData(bc.BCType.Neumann, 1, 0, 1)
+        self.boundaries = [self.left_bc,self.right_bc,self.down_bc,self.top_bc]
 
-temp = 0
-left_bc.InitializeData(bc.BCType.Neumann, 0, 0, 1)
-right_bc.InitializeData(bc.BCType.Neumann, 0, 0, 1)
-down_bc.InitializeData(bc.BCType.Dirichlet, temp, 1, 0)
-top_bc.InitializeData(bc.BCType.Neumann, 1, 0, 1)
+    def solve(self):
+        self.D = FEM_Diffusion(self.mesh,self.boundaries,self.f,self.quadrature,self.kappa)
+        self.DTotal = ConcatenateToFullD(self.mesh,self.boundaries,self.D)
 
+    def plot(self):
+        PlotTriangulationSolution(self.mesh,self.DTotal)
 
-f = lambda x: 0
-quadrature = gq.GaussQuadrature(3,-1,1,2)  
-
-boundaries = [left_bc,right_bc,down_bc,top_bc]
-kappa = BrickKappa
-# kappa = lambda x,y:1
-D = FEM_Diffusion(mesh,boundaries,f,quadrature,kappa)
-DTotal = ConcatenateToFullD(mesh,boundaries,D)
-
-PlotTriangulationSolution(mesh,DTotal)
