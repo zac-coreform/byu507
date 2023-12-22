@@ -52,6 +52,7 @@ def NBasisPartial(a,xi,eta,direction):
     
 #evaluate the transformation mapping
 def XMap(x_pts,xi,eta):
+    # x_pts is the 2D equivalent of providing the global x interval to which you want xi to be mapped -- the target domain
     x = np.zeros(len(x_pts[0]))
     for a in range(0,4):
         x += NBasis(a,xi,eta) * x_pts[a]    #The range is from 0 to 1
@@ -87,9 +88,9 @@ def XMapPartial(x_pts,xi,eta,direction):
     xpartial = np.zeros(len(x_pts[0]))
     for a in range(0,4):
         # same as XMap but with derivs
-        xpartial += NBasisPartial(a, xi, eta, direction)
-    # with linear BFs, these are going to almost always be zero, no?
-    # returns a "point"?
+        # xpartial += NBasisPartial(a, xi, eta, direction)
+        xpartial += x_pts[a] * NBasisPartial(a, xi, eta, direction)
+        #.^ corrected, from email
     return xpartial
 
 
@@ -102,7 +103,7 @@ def JacobianMatrix(x_pts,xi,eta):
     jac_matrix[1,0] = partial_xi[1]
     jac_matrix[0,1] = partial_eta[0]
     jac_matrix[1,1] = partial_eta[1]
-
+    return jac_matrix
 
 def JacobianDet(x_pts,xi,eta):
     # tbh I don't remember what the purpose of this is... does sound familiar from class; I'll have to go review my notes
@@ -127,22 +128,34 @@ def SpatialGradient(a,x_pts,xi,eta):
 # input four points as a list of lists
 # e.g. xpts = [[2,1],[5,-1],([8,0]),([4,4])]
 def PlotTransformationMap(x_pts):
-    n_x = 100
-    n_y = 101     
+    # print(f"x_pts passed in = {x_pts}")
+    # n_x = 100
+    # n_y = 101
+    n_x = 10
+    n_y = 11
     
+    # change the list of lists to array of arrays
     x_pts_arrays = []
     for pt in x_pts:
         x_pts_arrays.append(np.array(pt))
+    # print(f"x_pts_arrays = {x_pts_arrays}")
     
     xvals = np.linspace(-1,1,n_x) 
     yvals = np.linspace(-1,1,n_y)
-    
+    #.^ 100, 101 points between -1 and 1
+    # print(f"xvals is \n{xvals}")
+    # print(f"yvals is \n{yvals}")
     X, Y = np.meshgrid(xvals, yvals)   
     
     N = np.zeros((3,n_x,n_y))
+    #.^ array of 3 arrays of 100x101
+    # print(len(N)) # 3
+    # print(f"N array is {N}")
     for i in range(0,len(xvals)):
       for j in range(0,len(yvals)):
+        # print(f"xvals[i],yvals[j] are {round(xvals[i], 2)} and {round(yvals[j], 2)}")
         temp = XMap(x_pts_arrays,xvals[i],yvals[j])
+        # print(f"XMap conversion is: {temp}")
         # 
         N[0,i,j] = temp[0]       #in xi direction
         N[1,i,j] = temp[1]       #in eta direction

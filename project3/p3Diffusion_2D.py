@@ -16,19 +16,21 @@ import p3Gauss_Quadrature_2D as gq
 import p3Surface_Mesh as sm
 import p3Boundary_Conditions as bc
 import p3Basis_Functions_2D as bf
+import pprint as pp
 
 
 def CreateIENArray(mesh):
-    n_elems = len(mesh.faces) # 8
-    elems = mesh.faces
-    bfs_per_elem = NBasisFunctions(mesh,0) # random representative
-    IEN = np.zeros((bfs_per_elem, n_elems)).astype('int')
-    for e_ in range(0, n_elems):
-        for a_ in range(0, bfs_per_elem):
-            elem_arr = elems[e_]
-            Q = elem_arr[a_]
-            IEN[a_,e_] = Q
-    return IEN
+    return mesh.faces.transpose()
+#     n_elems = len(mesh.faces) # 8
+#     elems = mesh.faces
+#     bfs_per_elem = NBasisFunctions(mesh,0) # random representative
+#     IEN = np.zeros((bfs_per_elem, n_elems)).astype('int')
+#     for e_ in range(0, n_elems):
+#         for a_ in range(0, bfs_per_elem):
+#             elem_arr = elems[e_]
+#             Q = elem_arr[a_]
+#             IEN[a_,e_] = Q
+#     return IEN
 
 
 # hacky tired brain; surely there's some simple way to do this
@@ -84,33 +86,64 @@ def NBasisFunctions(mesh,elem_idx):
 
 # Evaluate thermal conductivity of an element at its center
 def EvaluateKappaAtElementCenter(mesh,elem_idx,kappa):
-    x_pts = mesh.get_face_points(elem_idx)[:,0:2]     
+    x_pts = mesh.get_face_points(elem_idx)[:,0:2]
     if len(x_pts)==4:
-        x_center = bf.XMap(x_pts, 0, 0, 4)
+        x_center = bf.XMap(x_pts, 0, 0)
     else:
-        x_center = bf.XMap(x_pts, 0.33, 0.33, 3)
+        x_center = bf.XMap(x_pts, 0.33, 0.33)
     elem_kappa = kappa(x_center[0],x_center[1])
     return elem_kappa
 
+# remember, this runs inside a loop through element indices, i.e.:
+    # elems = mesh.faces
+    # n_elems = len(elems)
+    # for e in range(0, n_elems):
+        #... elem = elems[e]
+
 def LocalStiffness(mesh,elem_idx,kappa,quadrature):    
-    n_bfs = NBasisFunctions(mesh, elem_idx)
-    
-    ke = np.zeros((n_bfs,n_bfs))
-    x_pts = mesh.get_face_points(elem_idx)[:,0:2]     
-
     elem_kappa = EvaluateKappaAtElementCenter(mesh, elem_idx, kappa)
+    n_quad = quadrature.n_quad
+    xiloop = etaloop = n_quad
+    pts_xi = quadrature.quad_pts[0]
+    pts_eta = quadrature.quad_pts[1]
+    wts_xi = quadrature.quad_wts[0]
+    wts_eta = quadrature.quad_wts[1]
+    xiloop = len(pts_xi)
+    etaloop = len(pts_eta)
+    x_pts = mesh.get_face_points(elem_idx)[:,0:2]
+    #. ^ global xi, eta coords of face vertices, x0 and x1
+    #. ^ equiv of x_pts arg in 1D: used to calc XMapDerv component of base ke equation
+    n_bfs = NBasisFunctions(mesh, elem_idx)
+    ke = np.zeros((n_bfs, n_bfs))
+    
+    # start quadrature points loop:
+    for i in range(0, xiloop):
+        for j in range(0, etaloop):
+            pt = quadrature.get_point(i, j)
+            wt = quadrature.get_weight(i, j)
 
-    # TODO: Complete this local assembly routine
+            for a in range(0, n_bfs):
+                for b in range(0, n_bfs):
+                    J = bf.JacobianDet(x_pts, pt[0], pt[1])
+                    # kappa = BrickKappa(pt[0], pt[1])
+                    
+                    a_grad = bf.SpatialGradient(a, x_pts, pt[0], pt[1])
+                    b_grad = bf.SpatialGradient(b, x_pts, pt[0], pt[1])
+                    kappa_term = np.dot(elem_kappa, b_grad)                    
+                    grad_terms = np.dot(kappa_term, a_grad)
+                    incr = wt * grad_terms * J
+                    ke[a,b] += incr 
+    #// TODO: Complete this local assembly routine
+    # print(f"ke is {ke}")
+    return ke
 
-    pass
-
-
-def LocalForceBoundaryConditions(mesh,elem_idx,fe):
+def LocalForceBoundaryConditions(mesh,elem_idx,fe, boundaries,quadrature):
     face_vert_idxs = mesh.faces[elem_idx]
     dirichlet_nodes = {}
     neumann_edges = {}
     robin_edges = {}
-    
+
+
     # ascribe boundary information on this element
     for boundary in boundaries:
         if boundary.IsDirichlet():
@@ -130,6 +163,7 @@ def LocalForceBoundaryConditions(mesh,elem_idx,fe):
                                 robin_edges.add(edge)
     
     # TODO: Comment on what this is doing
+    # checking each vertex to see if it's the one that has an associated neumann h-value
     if len(neumann_edges) != 0:
         while len(neumann_edges) != 0:
             
@@ -153,70 +187,133 @@ def LocalForceBoundaryConditions(mesh,elem_idx,fe):
             # sys.exit("The following needs to take into account thermal conductivity. It also seems to be 2x bigger than it should be")
             # bottom side
             if 0 in idxs and 1 in idxs:
-                n0 = lambda x: bf.NBasis(0, x, -1, 4)
-                n1 = lambda x: bf.NBasis(1, x, -1, 4)
+                n0 = lambda x: bf.NBasis(0, x, -1)
+                n1 = lambda x: bf.NBasis(1, x, -1)
                 fe[0] += integrate.quadrature(n0,-1,1)[0] * h_val * halflength
                 fe[1] += integrate.quadrature(n1,-1,1)[0] * h_val * halflength
             # left side
             elif 1 in idxs and 2 in idxs:
-                n1 = lambda x: bf.NBasis(1, 1, x, 4)
-                n2 = lambda x: bf.NBasis(2, 1, x, 4)
+                n1 = lambda x: bf.NBasis(1, 1, x)
+                n2 = lambda x: bf.NBasis(2, 1, x)
                 fe[1] += integrate.quadrature(n1,-1,1)[0] * h_val * halflength
                 fe[2] += integrate.quadrature(n2,-1,1)[0] * h_val * halflength
             # top side
             elif 2 in idxs and 3 in idxs:
-                n2 = lambda x: bf.NBasis(2, x, 1, 4)
-                n3 = lambda x: bf.NBasis(3, x, 1, 4)
+                n2 = lambda x: bf.NBasis(2, x, 1)
+                n3 = lambda x: bf.NBasis(3, x, 1)
                 fe[2] += integrate.quadrature(n2,-1,1)[0] * h_val * halflength
                 fe[3] += integrate.quadrature(n3,-1,1)[0] * h_val * halflength
             # right side
             elif 0 in idxs and 3 in idxs:
-                n0 = lambda x: bf.NBasis(0, -1, x, 4)
-                n3 = lambda x: bf.NBasis(3, -1, x, 4)
+                n0 = lambda x: bf.NBasis(0, -1, x)
+                n3 = lambda x: bf.NBasis(3, -1, x)
                 fe[0] += integrate.quadrature(n0,-1,1)[0] * h_val * halflength
                 fe[3] += integrate.quadrature(n3,-1,1)[0] * h_val * halflength
 
     # TODO: Complete and comment this
+    ien = CreateIENArray(mesh)
+    n_bfs = NBasisFunctions(mesh, elem_idx)
+    # if there are any Dirichlet nodes (dirichlet_nodes is not empty)
     if len(dirichlet_nodes) != 0:
+        kappa = BrickKappa
         elem_kappa = EvaluateKappaAtElementCenter(mesh, elem_idx, kappa)
-
+        # check each member of dirichlet_nodes to see if it 
         while len(dirichlet_nodes) != 0:
+            # TODO: Fill in here            
             # popitem removes the last-added item in a dictionary
             d_data = dirichlet_nodes.popitem()
-            # TODO: Fill in here
-            pass
+
+
+            for fix in range(0, n_bfs):
+                thing = ien[fix, elem_idx]
+                
+                if thing == d_data[0]:
+                    g = d_data[1]
+
+                    # similar to ke
+                    # quadrature = gq.Gauss_Quadrature2d(7)
+                    n_quad = quadrature.n_quad
+                    xiloop = etaloop = n_quad
+                    pts_xi = quadrature.quad_pts[0]
+                    pts_eta = quadrature.quad_pts[1]
+                    wts_xi = quadrature.quad_wts[0]
+                    wts_eta = quadrature.quad_wts[1]
+                    xiloop = len(pts_xi)
+                    etaloop = len(pts_eta)
+                    x_pts = mesh.get_face_points(elem_idx)[:,0:2]
+                    
+
+                    for i in range(0, xiloop):
+                        for j in range(0, etaloop):
+                            pt = quadrature.get_point(i, j)
+                            fixed_grad = bf.SpatialGradient(fix, x_pts, pt[0], pt[1])
+                            J = bf.JacobianDet(x_pts, pt[0], pt[1])
+                            # print(f"fix = {fix}")
+                            # print(f"J is {J} and \n fixed_grad is {fixed_grad}")
+                            wt = quadrature.get_weight(i, j)
+                            # print(f"wt is {wt}")
+                            # print(f"pt is {pt}")
+                            for a in range(0, n_bfs):
+                                
+                                a_grad = bf.SpatialGradient(a, x_pts, pt[0], pt[1])
+                                kappa_term = np.dot(elem_kappa, fixed_grad)
+                                grad_terms = np.dot(a_grad, kappa_term)
+                                incr = wt * g * J * grad_terms
+                                fe[a] -= incr
 
     return fe
 
 
 def LocalForce(mesh,elem_idx,f,boundaries,kappa,quadrature):
+    n_quad = quadrature.n_quad
+    xiloop = etaloop = n_quad
+    pts_xi = quadrature.quad_pts[0]
+    pts_eta = quadrature.quad_pts[1]
+    wts_xi = quadrature.quad_wts[0]
+    wts_eta = quadrature.quad_wts[1]
+    xiloop = len(pts_xi)
+    etaloop = len(pts_eta)
+
     n_bfs = NBasisFunctions(mesh, elem_idx)
-        
     fe = np.zeros((n_bfs,1))
     x_pts = mesh.get_face_points(elem_idx)[:,0:2]     
-
-    # TODO: Fill in here
-    pass 
-
     
+    #// TODO: Fill in here
+    for i in range(0, xiloop):
+        for j in range(0, etaloop):
+            pt = quadrature.get_point(i, j)
+            wt = quadrature.get_weight(i, j)
+            
+            for a in range(0, n_bfs):
+                # for b in range(0, n_bfs):
+                J = bf.JacobianDet(x_pts, pt[0], pt[1])
+                x_g = bf.XMap(x_pts, pt[0], pt[1])
+                f_term = f(x_g)
+                a_grad = bf.NBasis(a, pt[0], pt[1])
+                incr = wt * J * a_grad * f_term
+                fe[a] += incr
+    
+    fe = LocalForceBoundaryConditions(mesh,elem_idx,fe, boundaries, quadrature)
+    # print(f"fe is {fe}")
     return fe
 
-def FEM_Diffusion(mesh,boundaries,f,quadrature,kappa):
-    dirichlet_dofs = set()
-    for bdry in boundaries:
-        if bdry.IsDirichlet():
-            for key in bdry.node_to_edge:
-                dirichlet_dofs.add(key)    
-    IEN = CreateIENArray(mesh)
-    ID = CreateIDArray(mesh,dirichlet_dofs)
-    # TODO: Complete this
-    D = np.zeros(len(mesh.vs))
-    return D
+# def FEM_Diffusion(mesh,boundaries,f,quadrature,kappa):
+#     dirichlet_dofs = set()
+#     for bdry in boundaries:
+#         if bdry.IsDirichlet():
+#             for key in bdry.node_to_edge:
+#                 dirichlet_dofs.add(key)    
+#     IEN = CreateIENArray(mesh)
+#     ID = CreateIDArray(mesh,dirichlet_dofs)
+#     # TODO: Complete this
+#     D = np.zeros(len(mesh.vs))
+#     return D
 
 
 class FEM_Diffusion2d():
     def __init__(self,mesh,boundaries,f,quadrature,kappa):
         self.mesh = mesh
+        self.n_elems = len(mesh.faces)
         self.boundaries = boundaries
         self.f = f
         self.quadrature = quadrature
@@ -243,6 +340,7 @@ class FEM_Diffusion2d():
 
         for e in range(0, self.n_elems):
             ke = LocalStiffness(self.mesh,e,self.kappa,self.quadrature)
+            # print(f"ke is {ke}")
             self.ke_list.append(ke)
             fe = LocalForce(self.mesh,e,self.f,self.boundaries,self.kappa,self.quadrature)
             self.fe_list.append(fe)
@@ -252,21 +350,22 @@ class FEM_Diffusion2d():
             
             for a in range(0,n_elem_bfs):
                 P = self.IEN[a,e]
-                A = self.ID[P]
+                A = self.ID[1,P]
                 if A == -1:
                     continue
-                self.F[A] += self.fe[a]
+                self.F[A] += fe[a]
                 for b in range(0,n_elem_bfs):
                     Q = self.IEN[b,e]
-                    B = self.ID[Q]
+                    B = self.ID[1,Q]
                     if B == -1:
                         continue
-                    self.K[A,B] += self.ke[a,b]
-            self.D = np.linalg.solve(self.K,self.F)
+                    self.K[A,B] += ke[a,b]
+        print(f"K=\n{self.K}")
+        print(f"K=\n{self.F}")
+        self.D = np.linalg.solve(self.K,self.F)
+        print(f"D = \n{self.D}")
 
-    def solve(self):
-        # np.linalg.solve(...)
-        return self.D
+        # return self.D
 
 
 # TODO: Comment and complete this code
@@ -290,11 +389,10 @@ def ConcatenateToFullD(mesh,boundaries,D):
         if i in dirichlet_dofs:
             Dtotal.append(dirichlet_dofs[i])
         else:
-            #Dtotal.append(flatD[ID[i]])
-            Dtotal.append(0) # TODO: editme!
+            Dtotal.append(flatD[ID[1,i]])
+            # Dtotal.append(0) # TODO: editme!
     return np.array(Dtotal)
 
-    
 
 # TODO: Comment on and use this code
 def PlotTriangulationSolution(mesh,DTotal):
@@ -303,11 +401,10 @@ def PlotTriangulationSolution(mesh,DTotal):
     faces = []
     for i in range(0,len(mesh.faces)):
         if mesh.is_quadrilateral_face(i):
-            print(f"quad face")
             faces.append([mesh.faces[i][0],\
                           mesh.faces[i][1],\
                           mesh.faces[i][2]])
-            print(f"")
+
             faces.append([mesh.faces[i][2],\
                           mesh.faces[i][3],\
                           mesh.faces[i][0]])
@@ -332,7 +429,7 @@ def PlotTriangulationSolution(mesh,DTotal):
     
     ax1.triplot(triangles, color='1',linewidth=0.1)
 
-    
+
 # Define thermal conductivity information for a brick
 # 20 cm x 10 cm brick
 def BrickKappa(x,y):
@@ -346,6 +443,7 @@ def BrickKappa(x,y):
     else:
         return claykappa
     
+
 # Define side sets for use in boundary conditions
 def ProcessIntoSideSets(mesh):
     left = []
@@ -369,22 +467,24 @@ def ProcessIntoSideSets(mesh):
     return [left,bottom,right,top]
             
 
-
-
+####################################################
+####################################################
 
 # Problem execution
 
 class run_problem():
     def __init__(self, n_quad):
         self.n_quad = n_quad
-        self.temp = 0
+        self.temp = 10
         self.f = lambda x: 0
-        self.quadrature = gq.Gauss_Quadrature2d(self.n_quad,-1,1,2)
+        self.quadrature = gq.Gauss_Quadrature2d(self.n_quad,-1,1)
         self.kappa = BrickKappa
         self.make_mesh()
+        self.ien = CreateIENArray(self.mesh)
         self.make_bcs()
     def make_mesh(self):
-        self.mesh = sm.SurfaceMesh.FromOBJ_FileName("files/rectangle_plate_COARSE.obj")
+        # self.mesh = sm.SurfaceMesh.FromOBJ_FileName("files/rectangle_plate_COARSE.obj")
+        self.mesh = sm.SurfaceMesh.FromOBJ_FileName("files/brick.obj")
         [self.left,self.bottom,self.right,self.top]=ProcessIntoSideSets(self.mesh)
     def make_bcs(self):
         self.left_bc = bc.BoundaryCondition(0, self.left)
@@ -394,12 +494,15 @@ class run_problem():
         self.left_bc.InitializeData(bc.BCType.Neumann, 0, 0, 1)
         self.right_bc.InitializeData(bc.BCType.Neumann, 0, 0, 1)
         self.down_bc.InitializeData(bc.BCType.Dirichlet, self.temp, 1, 0)
-        self.top_bc.InitializeData(bc.BCType.Neumann, 1, 0, 1)
+        self.top_bc.InitializeData(bc.BCType.Neumann, 0.3, 0, 1)
         self.boundaries = [self.left_bc,self.right_bc,self.down_bc,self.top_bc]
 
     def solve(self):
-        self.D = FEM_Diffusion(self.mesh,self.boundaries,self.f,self.quadrature,self.kappa)
+        self.prob = FEM_Diffusion2d(self.mesh,self.boundaries,self.f,self.quadrature,self.kappa)
+
+        self.D = self.prob.D
         self.DTotal = ConcatenateToFullD(self.mesh,self.boundaries,self.D)
+
 
     def plot(self):
         PlotTriangulationSolution(self.mesh,self.DTotal)
